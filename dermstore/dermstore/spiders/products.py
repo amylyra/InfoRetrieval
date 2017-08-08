@@ -18,9 +18,9 @@ class DermstoreProductsSpider(SitemapSpider):
     name = "products"
     sitemap_urls = ['https://www.dermstore.com/robots.txt']
     sitemap_rules = [('/product_', 'parse_product')]
-    
+
     # -------------------------------------------------------------------------
-    
+
     def parse_product(self, response):
         """Extract product details"""
         product_loader = ProductItemLoader(ProductItem(), response)
@@ -42,20 +42,20 @@ class DermstoreProductsSpider(SitemapSpider):
 
         if 'price' not in product or not product['price']:
             product['price'] = response.xpath('//script').re_first('"prod_price" : "([0-9.]+)"')
-            
+
         # Extract product ID
         product_id = response.xpath('//script').re_first('prod_id: ([0-9]+)')
 
         # Request reviews data
         yield self.reviews_request(prod_id)
-        
+
     # -------------------------------------------------------------------------
-    
+
     def parse_reviews(self, response):
         """Extract reviews"""
         product = response.meta['product']
         product['reviews'] = response.meta['reviews'] or []
-        
+
         reviews_list = response.xpath('//div[@class="panel panel-default"]')
         for each in reviews_list:
             # Extract review information
@@ -64,7 +64,7 @@ class DermstoreProductsSpider(SitemapSpider):
             review_loader.add_xpath('description', './/div[@class="col-sm-9"]/p')
             review_loader.add_xpath('rating', './/div[starts-with(@class, "starsBox")]/@class', re="star([0-9.]+)")
             review = review_loader.load_item()
-            
+
             # Extract reviewer information
             reviewer_item = each.xpath('.//div[contains(@class, "reviewer")]')
             reviewer_loader = ReviewerItemLoader(ReviewerItem(), reviewer_item)
@@ -73,23 +73,23 @@ class DermstoreProductsSpider(SitemapSpider):
             reviewer_loader.add_xpath('skinTone', './p/text()[contains(., "Skin Tone")]/following-sibling::strong')
             reviewer_loader.add_xpath('age', './p/text()[contains(., "Age")]/following-sibling::strong')
             reviewer_loader.add_xpath('location', './p/text()[contains(., "from")]', re='from(.+)')
-            reviewer_loader.add_xpath('reviewDate', './p/text()[last()]')
+            reviewer_loader.add_xpath('reviewDate', './p[last()]')
             reviewer_loader.add_xpath('isVerifiedPurchaser', './p/span[@class="highlight"]')
             reviewer = reviewer_loader.load_item()
-            
+
             review['reviewer'] = reviewer
             product['reviews'].append(review)
-            
+
         # Check if there are more reviews
         if len(product['reviews'] < product['reviewCount']):
             yield self.reviews_request(
                 product,
-                response.meta['product_id'], 
+                response.meta['product_id'],
                 page=response.meta['page'] + 1
             )
         else:
             yield product
-            
+
     # -------------------------------------------------------------------------
 
     @staticmethod
@@ -108,7 +108,7 @@ class DermstoreProductsSpider(SitemapSpider):
             },
             callback=self.parse_reviews,
             meta={
-                'product': product, 
+                'product': product,
                 'product_id': product_id,
                 'page': page
             }
