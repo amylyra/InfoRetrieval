@@ -47,14 +47,14 @@ class DermstoreProductsSpider(SitemapSpider):
         product_id = response.xpath('//script').re_first('prod_id: ([0-9]+)')
 
         # Request reviews data
-        yield self.reviews_request(prod_id)
+        yield self.reviews_request(product, product_id)
 
     # -------------------------------------------------------------------------
 
     def parse_reviews(self, response):
         """Extract reviews"""
         product = response.meta['product']
-        product['reviews'] = response.meta['reviews'] or []
+        product['reviews'] = product['reviews'] or []
 
         reviews_list = response.xpath('//div[@class="panel panel-default"]')
         for each in reviews_list:
@@ -73,7 +73,7 @@ class DermstoreProductsSpider(SitemapSpider):
             reviewer_loader.add_xpath('skinTone', './p/text()[contains(., "Skin Tone")]/following-sibling::strong')
             reviewer_loader.add_xpath('age', './p/text()[contains(., "Age")]/following-sibling::strong')
             reviewer_loader.add_xpath('location', './p/text()[contains(., "from")]', re='from(.+)')
-            reviewer_loader.add_xpath('reviewDate', './p[last()]')
+            reviewer_loader.add_xpath('reviewDate', './p[last()]/text()[last()]')
             reviewer_loader.add_xpath('isVerifiedPurchaser', './p/span[@class="highlight"]')
             reviewer = reviewer_loader.load_item()
 
@@ -81,7 +81,7 @@ class DermstoreProductsSpider(SitemapSpider):
             product['reviews'].append(review)
 
         # Check if there are more reviews
-        if len(product['reviews'] < product['reviewCount']):
+        if len(product['reviews']) < product['reviewCount']:
             yield self.reviews_request(
                 product,
                 response.meta['product_id'],
@@ -92,8 +92,7 @@ class DermstoreProductsSpider(SitemapSpider):
 
     # -------------------------------------------------------------------------
 
-    @staticmethod
-    def reviews_request(product_id, page=1):
+    def reviews_request(self, product, product_id, page=1):
         """Build reviews request"""
         return scrapy.FormRequest(
             'https://www.dermstore.com/ajax/review_list.php',
