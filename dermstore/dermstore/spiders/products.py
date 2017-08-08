@@ -47,27 +47,14 @@ class DermstoreProductsSpider(SitemapSpider):
         product_id = response.xpath('//script').re_first('prod_id: ([0-9]+)')
 
         # Request reviews data
-        yield scrapy.FormRequest(
-            'https://www.dermstore.com/ajax/review_list.php',
-            headers={'X-Requested-With': 'XMLHttpRequest'},
-            formdata={
-                'prod_id': str(product_id),
-                'ipp': '125',
-                'layout': 'dolphin',
-                'page': '1',
-                'review_list_filter_type': 'skin',
-                'sort': ''
-            },
-            callback=self.parse_reviews,
-            meta={'product': product}
-        )
+        yield self.reviews_request(prod_id)
         
     # -------------------------------------------------------------------------
     
     def parse_reviews(self, response):
         """Extract reviews"""
         product = response.meta['product']
-        product['reviews'] = []
+        product['reviews'] = response.meta['reviews'] or []
         
         reviews_list = response.xpath('//div[@class="panel panel-default"]')
         for each in reviews_list:
@@ -82,9 +69,9 @@ class DermstoreProductsSpider(SitemapSpider):
             reviewer_item = each.xpath('.//div[contains(@class, "reviewer")]')
             reviewer_loader = ReviewerItemLoader(ReviewerItem(), reviewer_item)
             reviewer_loader.add_xpath('gender', './p/strong[contains(text(), "Female") or contains(text(), "Male")]')
-            reviewer_loader.add_xpath('skinType', './p/text()[starts-with(., "Skin Type")]/following-sibling::strong')
-            reviewer_loader.add_xpath('skinTone', './p/text()[starts-with(., "Skin Tone")]/following-sibling::strong')
-            reviewer_loader.add_xpath('age', './p/text()[starts-with(., "Age")]/following-sibling::strong')
+            reviewer_loader.add_xpath('skinType', './p/text()[contains(., "Skin Type")]/following-sibling::strong')
+            reviewer_loader.add_xpath('skinTone', './p/text()[contains(., "Skin Tone")]/following-sibling::strong')
+            reviewer_loader.add_xpath('age', './p/text()[contains(., "Age")]/following-sibling::strong')
             reviewer_loader.add_xpath('location', './p/text()[contains(., "from")]', re='from(.+)')
             reviewer_loader.add_xpath('reviewDate', './p/text()[last()]')
             reviewer_loader.add_xpath('isVerifiedPurchaser', './p/span[@class="highlight"]')
@@ -93,6 +80,38 @@ class DermstoreProductsSpider(SitemapSpider):
             review['reviewer'] = reviewer
             product['reviews'].append(review)
             
-        yield product
+        # Check if there are more reviews
+        if len(product['reviews'] < product['reviewCount']):
+            yield self.reviews_request(
+                product,
+                response.meta['product_id'], 
+                page=response.meta['page'] + 1
+            )
+        else:
+            yield product
+            
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def reviews_request(product_id, page=1):
+        """Build reviews request"""
+        return scrapy.FormRequest(
+            'https://www.dermstore.com/ajax/review_list.php',
+            headers={'X-Requested-With': 'XMLHttpRequest'},
+            formdata={
+                'prod_id': str(product_id),
+                'ipp': '125',
+                'layout': 'dolphin',
+                'page': str(page),
+                'review_list_filter_type': 'skin',
+                'sort': ''
+            },
+            callback=self.parse_reviews,
+            meta={
+                'product': product, 
+                'product_id': product_id,
+                'page': page
+            }
+        )
 
 # END =========================================================================
