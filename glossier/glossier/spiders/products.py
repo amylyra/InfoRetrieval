@@ -173,10 +173,10 @@ class GlossierProductsSpider(CrawlSpider):
             review['reviewer'] = reviewer
             product['reviews'].append(review)
 
-        if data['paging']['next_page_url']:
+        if data['paging'].get('next_page_url'):
             return response.follow(
                 data['paging']['next_page_url'],
-                headers={'Authorization': api_key},
+                headers={'Authorization': api_key, 'Referer': product['url']},
                 meta={
                     'product': product,
                     'api_key': api_key,
@@ -204,7 +204,7 @@ class GlossierProductsSpider(CrawlSpider):
             meta={
                 'product': product,
                 'api_key': api_key,
-                'handle_httpstatus_list': [404, 503]
+                'handle_httpstatus_list': [404, 503],
             },
             callback=self.parse_reviews
         )
