@@ -24,7 +24,7 @@ class GlossierProductsSpider(CrawlSpider):
 
     name = "products"
     allowed_domains = ['glossier.com', 'powerreviews.com']
-    start_urls = ['https://www.glossier.com/category/fragrance']
+    start_urls = ['https://www.glossier.com/products']
     rules = (
         # Parse product details
         Rule(
