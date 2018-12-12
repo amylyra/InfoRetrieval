@@ -18,8 +18,7 @@ class ProductsSpider(SitemapSpider):
 
     name = 'products'
     allowed_domains = ['influenster.com']
-    #sitemap_urls = ['https://www.influenster.com/ugc-sitemap.xml']
-    sitemap_urls = ['https://www.influenster.com/sitemap-marketplace_product_review.xml']
+    sitemap_urls = ['https://www.influenster.com/ugc-sitemap.xml']
     sitemap_rules = [
         ('/reviews/', 'parse_product'),
     ]
