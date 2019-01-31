@@ -5,93 +5,101 @@
 # Imports =====================================================================
 
 import json
-import scrapy
 
+import scrapy
 from scrapy.spiders import SitemapSpider
-from sephora.items import ProductItem, ReviewItem, ReviewerItem
-from sephora.loaders import ProductItemLoader, ReviewItemLoader, ReviewerItemLoader
+
+from sephora.items import (
+    ProductItem, ProductVariationItem, ReviewItem, ReviewerItem
+)
+from sephora.loaders import (
+    ProductItemLoader, ProductVariationItemLoader,
+    ReviewItemLoader, ReviewerItemLoader
+)
 
 # Spider ======================================================================
 
 class SephoraProductsSpider(SitemapSpider):
     """Sephora Products Spider"""
 
-    name = "products"
+    name = 'products'
+    allowed_domains = ['sephora.com']
     sitemap_urls = ['http://www.sephora.com/products-sitemap.xml']
 
     # -------------------------------------------------------------------------
 
     def parse(self, response):
         """Extract product details"""
-        data = response.xpath('//script[@seph-json-to-js="sku"]/text()').extract_first()
-        if data:
-            record = json.loads(data)
-            product_loader = ProductItemLoader(ProductItem(), response)
-            product_loader.add_value('id', record['id'])
-            product_loader.add_value('sku', record['sku_number'])
-            product_loader.add_value('name', record['primary_product']['display_name'])
-            product_loader.add_value('brand', record['primary_product']['brand_name'])
-            product_loader.add_xpath('category', '//ol[@data-at="nav_crumb"]/li')
-            product_loader.add_xpath('loveCount', '//span[@seph-love-count]/@seph-love-count')
-            product_loader.add_xpath('reviewCount', '//a[@href="#pdp-reviews"]/span[@class="u-linkComplexTarget"]', re='([0-9]+)')
-            product_loader.add_value('rating', record['primary_product']['rating'])
-            product_loader.add_value('listPrice', record.get('list_price', None))
-            product_loader.add_value('valuePrice', record.get('value_price', None))
-            product_loader.add_value('size', record['sku_size'])
-            product_loader.add_xpath('image', '//meta[@property="og:image"]/@content')
-            product_loader.add_xpath('use', '//div[@id="use"]')
-            product_loader.add_xpath('aboutBrand', '//div[@id="brand"]')
-            product_loader.add_xpath('details', '//div[@id="details"]')
-            product_loader.add_xpath('ingredients', '//div[@id="ingredients"]/p[not(@class="ng-hide")]')
-            product_loader.add_value('ingredients', record['ingredients'])
-            product_loader.add_xpath('shipping', '//div[@id="shipping"]/p[not(@class="ng-hide")]')
-            product_loader.add_value('sephoraExclusive', record.get('is_sephora_exclusive', False))
-            product_loader.add_value('url', response.url)
-            product = product_loader.load_item()
+        blob = response.css('[data-comp="PageJSON"]::text').get()
+        data = json.loads(blob)
 
-            reviews_url = response.xpath('//iframe[contains(@src, "reviews.htm")]/@src').re_first('([^?]+)')
-            yield scrapy.Request(
-                '{url}?format=embedded'.format(url=reviews_url),
-                callback=self.parse_reviews,
-                meta={'product': product}
-            )
+        item = self.extract_product(data[6]['props']['currentProduct'])
+
+        loader = ProductItemLoader(item)
+        loader.add_value('url', response.url)
+        return loader.load_item()
 
     # -------------------------------------------------------------------------
 
     def parse_reviews(self, response):
-        product = response.meta['product']
-        product['reviews'] = product['reviews'] or []
-        reviews_list = response.xpath('//span[@itemprop="review"]')
-        for each in reviews_list:
-            # Extract review information
-            review_loader = ReviewItemLoader(ReviewItem(), each)
-            review_loader.add_xpath('title', './/span[@itemprop="name"]')
-            review_loader.add_xpath('quickTake', './/span[@class="BVRRTag"]')
-            review_loader.add_xpath('description', './/div[@itemprop="description"]')
-            review_loader.add_xpath('rating', './/span[@itemprop="ratingValue"]')
-            review_loader.add_xpath('publishedAt', './/meta[@itemprop="datePublished"]/@content')
-            review = review_loader.load_item()
+        """Extract product reviews"""
+        product = response.meta.get('product') or {}
 
-            # Extract reviewer information
-            reviewer_loader = ReviewerItemLoader(ReviewerItem(), each)
-            reviewer_loader.add_xpath('name', './/span[@itemprop="author"]')
-            reviewer_loader.add_xpath('skinType', './/span[contains(@class, "BVRRContextDataValueskinType") and contains(@class, "BVRRValue")]')
-            reviewer_loader.add_xpath('skinTone', './/span[contains(@class, "BVRRContextDataValueskinTone") and contains(@class, "BVRRValue")]')
-            reviewer_loader.add_xpath('eyeColor', './/span[contains(@class, "BVRRContextDataValueeyeColor") and contains(@class, "BVRRValue")]')
-            reviewer_loader.add_xpath('age', './/span[contains(@class, "BVRRContextDataValueage") and contains(@class, "BVRRValue")]')
-            reviewer_loader.add_xpath('location', './/span[contains(@class, "BVRRUserLocation") and contains(@class, "BVRRValue")]')
-            reviewer_loader.add_xpath('badge', './/div[contains(@class, "BVRRReviewBadgeGraphic")]/@class', re='BVRRBadgeGraphic BVRRReviewBadgeGraphic BVRR(.+)Graphic')
-            reviewer = reviewer_loader.load_item()
+    # -------------------------------------------------------------------------
 
-            review['reviewer'] = reviewer
-            product['reviews'].append(review)
+    def extract_product(self, data):
+        """Extract product details"""
+        loader = ProductItemLoader(ProductItem())
+        loader.add_value('id', data.get('productId'))
+        loader.add_value('sku', data.get('fullSiteProductUrl'), re=r'(?i)skuId=(.+)')
+        loader.add_value('name', data.get('displayName'))
+        loader.add_value('brand_id', data['brand']['brandId'])
+        loader.add_value('brand_name', data['brand']['displayName'])
+        loader.add_value('brand_logo_url', data['brand']['logo'])
+        loader.add_value('brand_description', data['brand']['longDescription'])
+        loader.add_value('brand_url', data['brand']['targetUrl'])
+        loader.add_value('category_name', data['parentCategory']['displayName'])
+        loader.add_value('category_url', data['parentCategory']['targetUrl'])
+        loader.add_value('short_description', data.get('quickLookDescription'))
+        loader.add_value('long_description', data.get('longDescription'))
+        loader.add_value('suggested_usage', data.get('suggestedUsage'))
+        loader.add_value('loves_count', data.get('lovesCount'))
 
-        next_page = response.xpath('//a[@name="BV_TrackingTag_Review_Display_NextPage"]')
-        if next_page:
-            href = next_page.xpath('@href').extract_first()
-            url = response.urljoin(href)
-            yield scrapy.Request(url, callback=self.parse_reviews, meta={'product': product})
-        else:
-            yield product
+        variations = []
+        for each in data['regularChildSkus']:
+            variation = self.extract_product_variation(each)
+            variations.append(variation)
+        loader.add_value('variations', variations)
+
+        return loader.load_item()
+
+    # -------------------------------------------------------------------------
+
+    def extract_product_variation(self, data):
+        """Extract product variation"""
+        loader = ProductVariationItemLoader(ProductVariationItem())
+        loader.add_value('sku_id', data.get('skuId'))
+        loader.add_value('sku_name', data.get('skuName'))
+        loader.add_value('list_price', data.get('listPrice'))
+        loader.add_value('thumbnail_url', data.get('smallImage'))
+        loader.add_value('url', data.get('targetUrl'))
+        loader.add_value('variation_type', data.get('variationType'))
+        loader.add_value('variation_value', data.get('variationValue'))
+        return loader.load_item()
+
+    # -------------------------------------------------------------------------
+
+    def extract_review(self, selector):
+        """Extract review details"""
+        loader = ReviewItemLoader(ReviewItem(), selector)
+        loader.add_value('reviewer', self.extract_reviewer(selector))
+        return loader.load_item()
+
+    # -------------------------------------------------------------------------
+
+    def extract_reviewer(self, selector):
+        """Extract reviewer details"""
+        loader = ReviewerItemLoader(ReviewerItem(), selector)
+        return loader.load_item()
 
 # END =========================================================================
