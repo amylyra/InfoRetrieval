@@ -14,7 +14,7 @@ class StarReviewsCounterPipeline(object):
         counts = {star: 0 for star in [1, 2, 3, 4, 5]}
         if item.get('reviews'):
             for review in item['reviews']:
-                counts[review['rating']] = counts[review['rating']] + 1
+                counts[review['rating']] += 1
         item['star_reviews_counts'] = counts
         return item
 

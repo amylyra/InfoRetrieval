@@ -38,10 +38,19 @@ class ProductItem(BaseItem):
     short_description = Field()
     long_description = Field()
     suggested_usage = Field()
+    ingredients = Field()
     loves_count = Field()
     url = Field()
     variations = Field()
+    is_sephora_exclusive = Field()
+    is_new = Field()
+    is_out_of_stock = Field()
+    list_price = Field()
+    value_price = Field()
+    image_urls = Field()
     reviews = Field()
+    reviews_count = Field()
+    rating = Field()
     star_reviews_counts = Field()
 
 # -----------------------------------------------------------------------------
@@ -54,29 +63,33 @@ class ProductVariationItem(BaseItem):
     variation_type = Field()
     variation_value = Field()
     thumbnail_url = Field()
+    image_urls = Field()
+    is_sephora_exclusive = Field()
+    is_new = Field()
+    is_out_of_stock = Field()
     url = Field()
 
 # -----------------------------------------------------------------------------
 
 class ReviewItem(BaseItem):
     """Review item"""
-    title = Field()
-    quickTake = Field()
-    description = Field()
+    id = Field()
     rating = Field()
-    publishedAt = Field()
+    title = Field()
+    text = Field()
+    is_featured = Field()
+    positive_feedback_count = Field()
+    negative_feedback_count = Field()
+    published_at = Field()
     reviewer = Field()
 
 # -----------------------------------------------------------------------------
 
 class ReviewerItem(BaseItem):
     """Reviewer item"""
-    name = Field()
-    skinType = Field()
-    skinTone = Field()
-    age = Field()
+    id = Field()
+    username = Field()
     location = Field()
-    eyeColor = Field()
-    badge = Field()
+    properties = Field()
 
 # END =========================================================================

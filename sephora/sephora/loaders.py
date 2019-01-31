@@ -54,6 +54,12 @@ class ProductItemLoader(ItemLoader):
     loves_count_in = MapCompose(clean_text, parse_int)
     reviews_count_in = MapCompose(clean_text, parse_int)
     rating_in = MapCompose(clean_text, parse_float)
+    is_new_in = MapCompose(clean_text, parse_bool)
+    is_sephora_exclusive_in = MapCompose(clean_text, parse_bool)
+    is_out_of_stock_in = MapCompose(clean_text, parse_bool)
+
+    image_urls_in = Identity()
+    image_urls_out = Identity()
     variations_in = Identity()
     variations_out = Identity()
 
@@ -64,6 +70,13 @@ class ProductVariationItemLoader(ItemLoader):
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
+    image_urls_in = Identity()
+    image_urls_out = Identity()
+
+    is_new_in = MapCompose(clean_text, parse_bool)
+    is_sephora_exclusive_in = MapCompose(clean_text, parse_bool)
+    is_out_of_stock_in = MapCompose(clean_text, parse_bool)
+
 # -----------------------------------------------------------------------------
 
 class ReviewItemLoader(ItemLoader):
@@ -71,11 +84,21 @@ class ReviewItemLoader(ItemLoader):
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
+    published_at_in = MapCompose(clean_text, parse_date)
+    rating_in = MapCompose(clean_text, parse_float)
+    is_featured_in = MapCompose(clean_text, parse_bool)
+    positive_feedback_count_in = MapCompose(clean_text, parse_int)
+    negative_feedback_count_in = MapCompose(clean_text, parse_int)
+    reviewer_in = Identity()
+
 # -----------------------------------------------------------------------------
 
 class ReviewerItemLoader(ItemLoader):
     """Reviewer item loader"""
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
+
+    properties_in = Identity()
+    properties_out = Identity()
 
 # END =========================================================================
