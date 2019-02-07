@@ -57,8 +57,6 @@ class SephoraProductsSpider(SitemapSpider):
 
         if product.get('reviews_count') > len(product['reviews']):
             offset = response.meta.get('offset') + len(data['Results'])
-            if offset > 100:
-                return product
             return self.request_reviews(product, offset=offset)
         return product
 
