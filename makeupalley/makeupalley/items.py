@@ -10,6 +10,7 @@ import scrapy
 
 class ProductItem(scrapy.Item):
     """Product item."""
+
     id = scrapy.Field()
     name = scrapy.Field()
     brand = scrapy.Field()
@@ -29,6 +30,8 @@ class ProductItem(scrapy.Item):
 
 class ReviewItem(scrapy.Item):
     """Review item."""
+
+    id = scrapy.Field()
     content = scrapy.Field()
     rating = scrapy.Field()
     publishedAt = scrapy.Field()
@@ -40,6 +43,7 @@ class ReviewItem(scrapy.Item):
 
 class ReviewerItem(scrapy.Item):
     """Reviewer item."""
+
     username = scrapy.Field()
     skin = scrapy.Field()
     hair = scrapy.Field()

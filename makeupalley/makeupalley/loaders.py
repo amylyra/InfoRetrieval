@@ -8,29 +8,28 @@ import re
 import datetime
 import dateutil.parser
 
-try:
-    from urlparse import urljoin
-except ImportError:
-    from urllib.parse import urljoin
 from scrapy.loader import ItemLoader
 from scrapy.loader.processors import TakeFirst, MapCompose
 from w3lib.html import remove_tags, replace_entities
 
 # Processors ==================================================================
 
+def normalize_whitespace(text):
+    """Normalize whitespace in text."""
+    return re.sub(r'(\s)+', '\\1', text).strip()
+
+# -----------------------------------------------------------------------------
+
 def clean_text(text):
-    """Clean text from tags, replace entities and normalize whitespaces"""
+    """Clean text from tags, replace entities and normalize whitespaces."""
     text = remove_tags(str(text))
     text = replace_entities(text)
-    # Normalize whitespace
-    text = re.sub(r'(\s)+', '\\1', text)
-    # Strip whitespace
-    return text.strip()
+    return normalize_whitespace(text)
 
 # -----------------------------------------------------------------------------
 
 def parse_date(text):
-    """Parse dates from a string into a datetime object"""
+    """Parse dates from a string into a datetime object."""
     try:
         return dateutil.parser.parse(text)
     except ValueError:
@@ -39,26 +38,20 @@ def parse_date(text):
 # -----------------------------------------------------------------------------
 
 def parse_float(text):
-    """Parse float numbers"""
+    """Parse float numbers."""
     return float(text.replace(',', '') if text else 0.0)
 
 # -----------------------------------------------------------------------------
 
 def parse_int(text):
-    """Parse int numbers"""
+    """Parse int numbers."""
     return int(text.replace(',', '') if text else 0)
-
-# -----------------------------------------------------------------------------
-
-def absolutify_url(link, loader_context):
-    """Convert relative urls to absolute urls"""
-    base_url = loader_context.get('source_url', '')
-    return urljoin(base_url, link)
 
 # Loaders =====================================================================
 
 class ProductItemLoader(ItemLoader):
-    """Product item loader"""
+    """Product item loader."""
+
     default_output_processor = TakeFirst()
     default_input_processor = MapCompose(clean_text)
 
@@ -69,7 +62,8 @@ class ProductItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ReviewItemLoader(ItemLoader):
-    """Review item loader"""
+    """Review item loader."""
+
     default_output_processor = TakeFirst()
     default_input_processor = MapCompose(clean_text)
 
@@ -81,10 +75,9 @@ class ReviewItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ReviewerItemLoader(ItemLoader):
-    """Reviewer item loader"""
+    """Reviewer item loader."""
+
     default_output_processor = TakeFirst()
     default_input_processor = MapCompose(clean_text)
-
-    profileUrl_in = MapCompose(clean_text, absolutify_url)
 
 # END =========================================================================
