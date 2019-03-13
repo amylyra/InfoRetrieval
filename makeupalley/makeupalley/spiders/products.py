@@ -1,61 +1,81 @@
 # -*- coding: utf-8 -*-
 
-"""Makeup Alley Products Spider"""
+"""makeupalley.com products spider."""
 
 # Imports =====================================================================
 
-import urllib
 import scrapy
+from scrapy.exceptions import CloseSpider
 
 from makeupalley.items import ProductItem, ReviewItem, ReviewerItem
-from makeupalley.loaders import ProductItemLoader, ReviewItemLoader, ReviewerItemLoader
+from makeupalley.loaders import (
+    ProductItemLoader, ReviewItemLoader, ReviewerItemLoader
+)
 
 # Spider ======================================================================
 
 class MakeupAlleyProductsSpider(scrapy.Spider):
-    """Makeup Alley Products Spider"""
+    """makeupalley.com products spider."""
 
-    name = "products"
+    name = 'products'
     allowed_domains = ['makeupalley.com']
 
     # -------------------------------------------------------------------------
 
-    def start_requests(self):
-        """Login"""
-        yield scrapy.FormRequest(
+    @staticmethod
+    def login_request(username, password, callback):
+        """Build login request."""
+        return scrapy.FormRequest(
             'https://www.makeupalley.com/account/login.asp',
             formdata={
                 'sendtourl': 'http://www.makeupalley.com/product/',
-                'UserName': 'ouahibelhanchi',
-                'Password': 'MakeupAlleySpider',
+                'UserName': username,
+                'Password': password,
                 'remember': 'on',
             },
-            callback=self.request_products,
+            callback=callback,
             meta={'dont_cache': True}
         )
 
     # -------------------------------------------------------------------------
 
-    def request_products(self, response):
-        """Request products page"""
-        yield scrapy.Request('http://www.makeupalley.com/product/', meta={'dont_cache': True})
+    def start_requests(self):
+        """Attempt login using credentials provided from settings."""
+        username = self.settings.get('MAKEUPALLEY_USERNAME')
+        password = self.settings.get('MAKEUPALLEY_PASSWORD')
+        return [self.login_request(username, password, callback=self.check_login)]
 
     # -------------------------------------------------------------------------
 
-    def parse(self, response):
-        """Request products for each category"""
+    def check_login(self, response):
+        """Check login and redirect to products page."""
+        # Check if login attempt was successful
+        error_message = response.css('#LoginMUA > div > .Error::text').get()
+        if not error_message:
+            raise CloseSpider(error_message)
+
+        return scrapy.Request(
+            'http://www.makeupalley.com/product/',
+            callback=self.parse_categories,
+            meta={'dont_cache': True}
+        )
+
+    # -------------------------------------------------------------------------
+
+    def parse_categories(self, response):
+        """Request products for each category."""
         categories = response.xpath('//select[@id="CategoryID"]/option[position() > 1]')
         for category in categories:
-            category_id = category.xpath('@value').extract_first()
-            params = {
-                'Brand': '',
-                'BrandName': '',
-                'CategoryID': category_id,
-                'title': ''
-            }
-            query = urllib.urlencode(params)
-            yield scrapy.Request(
-                'http://www.makeupalley.com/product/searching.asp?{query}'.format(query=query),
+            category_id = category.xpath('@value').get()
+            yield scrapy.FormRequest(
+                method='GET',
+                url='http://www.makeupalley.com/product/searching.asp',
+                formdata={
+                    'Brand': '',
+                    'BrandName': '',
+                    'CategoryID': category_id,
+                    'title': ''
+                },
                 callback=self.parse_listing,
                 meta={'dont_cache': True}
             )
@@ -66,90 +86,49 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
         """Parse listing"""
         products = response.xpath('//div[@class="search-results"]/div/table/tr')
         for product in products:
-            brand = product.xpath('.//td[1]').extract_first()
-            category = product.xpath('.//td[3]').extract_first()
+            brand = product.xpath('.//td[1]').get()
+            category = product.xpath('.//td[3]').get()
 
-            href = product.xpath('.//a[contains(@href, "/product/")]/@href').extract_first()
-            url = response.urljoin(href)
-            yield scrapy.Request(
-                url,
+            product_link = product.xpath('.//a[contains(@href, "/product/")]/@href').get()
+            yield response.follow(
+                url=product_link,
                 callback=self.parse_product,
-                meta={'category': category, 'brand': brand,'dont_cache': True},
+                meta={'category': category, 'brand': brand, 'dont_cache': True}
             )
 
-        # Follow next page stop until we have reached the last one
-        next_page = response.xpath('//li[@class="next next-pag"]/a')
-        last_page = response.xpath('//li[@class="next next-pag"]/preceding-sibling::li[2]/a[@class="active"]')
-        if not last_page and next_page:
-            href = next_page.xpath('@href').extract_first()
-            url = response.urljoin(href)
-            yield scrapy.Request(url, callback=self.parse_listing, meta={'dont_cache': True})
+        for page in response.css('.pager a[href]'):
+            yield response.follow(
+                page,
+                callback=self.parse_listing,
+                meta={'dont_cache': True}
+            )
 
     # -------------------------------------------------------------------------
 
     def parse_product(self, response):
-        """Parse product details"""
-        if response.meta.get('product', None):
-            product = response.meta['product']
-        else:
-            product_loader = ProductItemLoader(ProductItem(), response)
-            product_loader.add_xpath('id', '//div[@id="ItemId"]')
-            product_loader.add_xpath('name', '//div[@id="ProductName"]')
-            product_loader.add_value('brand', response.meta.get('brand', None))
-            product_loader.add_value('category', response.meta.get('category', None))
-            product_loader.add_xpath('price', '//div[contains(@class, "product-review-stats")]/div/p[@class="price"]', re='Price:(.+)')
-            product_loader.add_xpath('packageQuality', '//div[contains(@class, "product-review-stats")]/div/p[@class="pack"]', re='([0-9.]+)')
-            product_loader.add_xpath('repurchasePercentage', '//div[contains(@class, "product-review-stats")]/div/p[not(span)]', re='([0-9]+)')
-            product_loader.add_xpath('reviewCount', '//div[contains(@class, "product-review-stats")]/div/p/span')
-            product_loader.add_xpath('rating', '//div[contains(@class, "product-review-stats")]/div/h3')
-            product_loader.add_xpath('image', '//div[contains(@class, "product-image")]//img/@src')
-            product_loader.add_xpath('ingredients', '//div[@id="ingredientsContent"]')
-            product_loader.add_value('url', response.url)
-            product = product_loader.load_item()
-            product['reviews'] = []
+        """Parse product details."""
+        product = response.meta.get('product') or self.extract_product(response)
+        product['reviews'] = product.get('reviews') or []
 
         reviews_list = response.xpath('//div[@id="reviews-wrapper"]/div[@class="comments"]')
         for each in reviews_list:
-            # Extract review information
-            review_loader = ReviewItemLoader(ReviewItem(), each)
-            review_loader.add_xpath('content', './/p[@class="break-word"]')
-            review_loader.add_xpath('rating', './/div[@class="lipies"]/span/@class', re="l-([0-9]+)-0")
-            review_loader.add_xpath('publishedAt', './/div[@class="date"]/p/text()[last()]')
-            review_loader.add_xpath('upvotes', './/div[@class="thumbs"]/p', re='([0-9]+) of')
-            review_loader.add_xpath('totalVotes', './/div[@class="thumbs"]/p', re='[0-9]+ of ([0-9]+)')
-            review = review_loader.load_item()
-
-            # Extract reviewer information
-            reviewer_loader = ReviewerItemLoader(ReviewerItem(), each)
-            reviewer_loader.context['source_url'] = response.url
-            reviewer_loader.add_xpath('username', './/a[@class="track_User_Profile"]')
-            reviewer_loader.add_xpath('skin', './/div[@class="important"]/p/b[contains(., "Skin")]/following-sibling::text()', re=':(.+)')
-            reviewer_loader.add_xpath('hair', './/div[@class="important"]/p/b[contains(., "Hair")]/following-sibling::text()', re=':(.+)')
-            reviewer_loader.add_xpath('eyes', './/div[@class="important"]/p/b[contains(., "Eyes")]/following-sibling::text()', re=':(.+)')
-            reviewer_loader.add_xpath('age', './/div[@class="important"]/p/b[contains(., "Age")]/following-sibling::text()', re=':(.+)')
-            reviewer_loader.add_xpath('profileUrl', './/a[@class="track_User_Profile"]/@href')
-            reviewer = reviewer_loader.load_item()
-
-            review['reviewer'] = reviewer
+            review = self.extract_review(each)
+            review['reviewer'] = self.extract_reviewer(each)
             product['reviews'].append(review)
+        reviews_count = product.get('reviewCount') or 0
 
-        # Follow next page stop until we have reached the last one
-        next_page = response.xpath('//li[@class="next next-pag"]/a')
-        last_page = response.xpath('//li[@class="next next-pag"]/preceding-sibling::li[2]/a[@class="active"]')
-        if not last_page and next_page:
-            href = next_page.xpath('@href').extract_first()
-            url = response.urljoin(href)
-            yield scrapy.Request(
-                url,
-                callback=self.parse_product,
-                meta={'product': product, 'dont_cache': True},
+        for page in response.css('.pager a[href]'):
+            yield response.follow(
+                page,
+                callback=self.parse_listing,
+                meta={'dont_cache': True}
             )
-        elif product.get('reviewCount', 0) > 0:
+
+        if reviews_count > 0:
             # Parse user profiles if any
             # Start with first profile
-            profile_url = product['reviews'][0]['reviewer']['profileUrl']
-            yield scrapy.Request(
-                profile_url,
+            yield response.follow(
+                url=product['reviews'][0]['reviewer']['profileUrl'],
                 callback=self.parse_profile,
                 meta={'product': product},
                 dont_filter=True
@@ -160,20 +139,18 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
     # -------------------------------------------------------------------------
 
     def parse_profile(self, response):
-        """Parse user profile"""
+        """Parse user profile."""
         product = response.meta['product']
         review_idx = response.meta.get('review_idx', 0)
-        reviewer_loader = ReviewerItemLoader(ReviewerItem(), response)
-        reviewer_loader.add_xpath('location', '//div[contains(@class, "details")]/p/b[contains(., "Location")]/following-sibling::text()')
-        reviewer = reviewer_loader.load_item()
+        reviewer = self.extract_reviewer_location(response)
+
         product['reviews'][review_idx]['reviewer']['location'] = reviewer['location']
 
         # Parse next profile, if any
         next_review_idx = review_idx + 1
         if next_review_idx < product['reviewCount']:
-            profile_url = product['reviews'][next_review_idx]['reviewer']['profileUrl']
-            yield scrapy.Request(
-                profile_url,
+            yield response.follow(
+                url=product['reviews'][next_review_idx]['reviewer']['profileUrl'],
                 callback=self.parse_profile,
                 meta={
                     'product': product,
@@ -184,5 +161,57 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
         else:
             # Last profile, yield full product details
             yield product
+
+    # -------------------------------------------------------------------------
+
+    def extract_product(self, response):
+        """Extract product details."""
+        loader = ProductItemLoader(ProductItem(), response)
+        loader.add_xpath('id', '//div[@id="ItemId"]')
+        loader.add_xpath('name', '//div[@id="ProductName"]')
+        loader.add_value('brand', response.meta.get('brand'))
+        loader.add_value('category', response.meta.get('category'))
+        loader.add_xpath('price', '//div[contains(@class, "product-review-stats")]/div/p[@class="price"]', re='Price:(.+)')
+        loader.add_xpath('packageQuality', '//div[contains(@class, "product-review-stats")]/div/p[@class="pack"]', re='([0-9.]+)')
+        loader.add_xpath('repurchasePercentage', '//div[contains(@class, "product-review-stats")]/div/p[not(span)]', re='([0-9]+)')
+        loader.add_xpath('reviewCount', '//div[contains(@class, "product-review-stats")]/div/p/span')
+        loader.add_xpath('rating', '//div[contains(@class, "product-review-stats")]/div/h3')
+        loader.add_xpath('image', '//div[contains(@class, "product-image")]//img/@src')
+        loader.add_xpath('ingredients', '//div[@id="ingredientsContent"]')
+        loader.add_value('url', response.url)
+        return loader.load_item()
+
+    # -------------------------------------------------------------------------
+
+    def extract_review(self, selector):
+        """Extract review details."""
+        loader = ReviewItemLoader(ReviewItem(), selector)
+        loader.add_xpath('content', './/p[@class="break-word"]')
+        loader.add_xpath('rating', './/div[@class="lipies"]/span/@class', re="l-([0-9]+)-0")
+        loader.add_xpath('publishedAt', './/div[@class="date"]/p/text()[last()]')
+        loader.add_xpath('upvotes', './/div[@class="thumbs"]/p', re='([0-9]+) of')
+        loader.add_xpath('totalVotes', './/div[@class="thumbs"]/p', re='[0-9]+ of ([0-9]+)')
+        return loader.load_item()
+
+    # -------------------------------------------------------------------------
+
+    def extract_reviewer(self, selector):
+        """Extract reviewer details."""
+        loader = ReviewerItemLoader(ReviewerItem(), selector)
+        loader.add_xpath('username', './/a[@class="track_User_Profile"]')
+        loader.add_xpath('skin', './/div[@class="important"]/p/b[contains(., "Skin")]/following-sibling::text()', re=':(.+)')
+        loader.add_xpath('hair', './/div[@class="important"]/p/b[contains(., "Hair")]/following-sibling::text()', re=':(.+)')
+        loader.add_xpath('eyes', './/div[@class="important"]/p/b[contains(., "Eyes")]/following-sibling::text()', re=':(.+)')
+        loader.add_xpath('age', './/div[@class="important"]/p/b[contains(., "Age")]/following-sibling::text()', re=':(.+)')
+        loader.add_xpath('profileUrl', './/a[@class="track_User_Profile"]/@href')
+        return loader.load_item()
+
+    # -------------------------------------------------------------------------
+
+    def extract_reviewer_location(self, selector):
+        """Extract reviewer location."""
+        loader = ReviewerItemLoader(ReviewerItem(), selector)
+        loader.add_xpath('location', '//div[contains(@class, "details")]/p/b[contains(., "Location")]/following-sibling::text()')
+        return loader.load_item()
 
 # END =========================================================================

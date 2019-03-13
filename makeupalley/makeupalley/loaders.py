@@ -8,16 +8,19 @@ import re
 import datetime
 import dateutil.parser
 
-from urlparse import urljoin
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 from scrapy.loader import ItemLoader
-from scrapy.loader.processors import TakeFirst, MapCompose, Join
+from scrapy.loader.processors import TakeFirst, MapCompose
 from w3lib.html import remove_tags, replace_entities
 
 # Processors ==================================================================
 
 def clean_text(text):
     """Clean text from tags, replace entities and normalize whitespaces"""
-    text = remove_tags(unicode(text))
+    text = remove_tags(str(text))
     text = replace_entities(text)
     # Normalize whitespace
     text = re.sub(r'(\s)+', '\\1', text)

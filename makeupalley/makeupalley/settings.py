@@ -14,13 +14,13 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy
-CONCURRENT_REQUESTS = 100
+CONCURRENT_REQUESTS = 32
 
 # Configure a delay for requests for the same website (default: 0)
-DOWNLOAD_DELAY = 0
+DOWNLOAD_DELAY = .5
 # The download delay setting will honor only one of:
-CONCURRENT_REQUESTS_PER_DOMAIN = 100
-#CONCURRENT_REQUESTS_PER_IP = 16
+CONCURRENT_REQUESTS_PER_DOMAIN = 4
+#CONCURRENT_REQUESTS_PER_IP = 0
 
 # Cookies
 COOKIES_ENABLED = True
@@ -34,9 +34,10 @@ ITEM_PIPELINES = {
 }
 
 # Retry configuration
-RETRY_TIMES = 50
-
-HTTP_RETRY_CODES = [500, 502, 503, 504, 400, 403, 408]
+RETRY_ENABLED = True
+RETRY_TIMES = 9
+RETRY_HTTP_CODES = [400, 403, 408, 421, 429, 500, 502, 503, 504, 522, 524]
+RETRY_PRIORITY_ADJUST = -4
 
 # Enable and configure the AutoThrottle extension
 AUTOTHROTTLE_ENABLED = False
@@ -56,3 +57,6 @@ HTTPCACHE_EXPIRATION_SECS = 0
 HTTPCACHE_DIR = 'httpcache'
 HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+MAKEUPALLEY_USERNAME = 'getmakeup'
+MAKEUPALLEY_PASSWORD = '!makeupalley!'
