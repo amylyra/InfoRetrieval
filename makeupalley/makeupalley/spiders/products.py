@@ -51,7 +51,7 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
         """Check login and redirect to products page."""
         # Check if login attempt was successful
         error_message = response.css('#LoginMUA > div > .Error::text').get()
-        if not error_message:
+        if error_message:
             raise CloseSpider(error_message)
 
         return scrapy.Request(
@@ -63,10 +63,15 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
     # -------------------------------------------------------------------------
 
     def parse_categories(self, response):
-        """Request products for each category."""
+        """
+        Parse categories and request listing for each category.
+
+        @url http://www.makeupalley.com/product/
+        @returns requests 1
+        """
         categories = response.xpath('//select[@id="CategoryID"]/option[position() > 1]')
         for category in categories:
-            category_id = category.xpath('@value').get()
+            category_id = category.attrib['value']
             yield scrapy.FormRequest(
                 method='GET',
                 url='http://www.makeupalley.com/product/searching.asp',
@@ -83,7 +88,12 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
     # -------------------------------------------------------------------------
 
     def parse_listing(self, response):
-        """Parse listing"""
+        """
+        Parse listing and follow products link and pagination.
+
+        @url https://www.makeupalley.com/product/searching.asp?Brand=&BrandName=&CategoryID=4&title=
+        @returns requests 1
+        """
         products = response.xpath('//div[@class="search-results"]/div/table/tr')
         for product in products:
             brand = product.xpath('.//td[1]').get()
@@ -106,7 +116,12 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
     # -------------------------------------------------------------------------
 
     def parse_product(self, response):
-        """Parse product details."""
+        """
+        Parse product details.
+
+        @url https://www.makeupalley.com/product/showreview.asp/ItemId=10301/Instant-Cheekbones-Contouring-Blush/COVERGIRL/Blush
+        @returns requests 1
+        """
         product = response.meta.get('product') or self.extract_product(response)
         product['reviews'] = product.get('reviews') or []
 
@@ -125,10 +140,10 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
             )
 
         if reviews_count > 0:
-            # Parse user profiles if any
-            # Start with first profile
+            # Parse user profiles if any, start with first profile
+            profile_link = product['reviews'][0]['reviewer']['profileUrl']
             yield response.follow(
-                url=product['reviews'][0]['reviewer']['profileUrl'],
+                url=profile_link,
                 callback=self.parse_profile,
                 meta={'product': product},
                 dont_filter=True
@@ -139,16 +154,22 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
     # -------------------------------------------------------------------------
 
     def parse_profile(self, response):
-        """Parse user profile."""
-        product = response.meta['product']
-        review_idx = response.meta.get('review_idx', 0)
-        reviewer = self.extract_reviewer_location(response)
+        """
+        Parse user profile.
 
-        product['reviews'][review_idx]['reviewer']['location'] = reviewer['location']
+        @url https://www.makeupalley.com/p~Starhawke
+        @returns items 1
+        """
+        product = response.meta.get('product') or ProductItem()
+        review_idx = response.meta.get('review_idx', 0)
+
+        reviewer = self.extract_reviewer_location(response)
+        if reviewer.get('location'):
+            product['reviews'][review_idx]['reviewer']['location'] = reviewer['location']
 
         # Parse next profile, if any
         next_review_idx = review_idx + 1
-        if next_review_idx < product['reviewCount']:
+        if next_review_idx < product.get('reviewCount', 0):
             yield response.follow(
                 url=product['reviews'][next_review_idx]['reviewer']['profileUrl'],
                 callback=self.parse_profile,
