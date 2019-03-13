@@ -183,11 +183,13 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
         Parse user profile.
 
         @url https://www.makeupalley.com/p~Starhawke
-        @returns items 1
+        @returns items 0
         """
-        product = response.meta.get('product')
+        product = response.meta.get('product') or ProductItem()
         review_id = response.meta.get('review_id')
-        product_id = product['id']
+        product_id = product.get('id')
+        if product_id is None:
+            return
 
         reviewer = self.extract_reviewer_location(response)
         if reviewer.get('location'):
@@ -230,7 +232,7 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
     def extract_review(selector):
         """Extract review details."""
         loader = ReviewItemLoader(ReviewItem(), selector)
-        loader.add_css('id', '.comment-options [data-id]::attr(data-id)')
+        loader.add_xpath('id', './/p[@class="break-word"]/@id')
         loader.add_xpath('content', './/p[@class="break-word"]')
         loader.add_xpath('rating', './/div[@class="lipies"]/span/@class', re='l-([0-9]+)-0')
         loader.add_xpath('publishedAt', './/div[@class="date"]/p/text()[last()]')
