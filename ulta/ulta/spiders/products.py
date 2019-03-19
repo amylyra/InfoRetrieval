@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Ulta Products Spider"""
+"""Ulta products spider."""
 
 # Imports =====================================================================
 
@@ -15,9 +15,10 @@ from ulta.loaders import ProductItemLoader, ReviewItemLoader, ReviewerItemLoader
 # Spider ======================================================================
 
 class UltaProductsSpider(SitemapSpider):
-    """Ulta Products Spider"""
+    """Ulta products spider."""
 
-    name = "products"
+    name = 'products'
+    allowed_domains = ['ulta.com']
     sitemap_urls = ['http://www.ulta.com/robots.txt']
     sitemap_follow = ['/detail[0-9]+.xml']
     sitemap_rules = [('product', 'parse_product')]
@@ -26,38 +27,9 @@ class UltaProductsSpider(SitemapSpider):
 
     def parse_product(self, response):
         """Extract product details"""
-        product_loader = ProductItemLoader(ProductItem(), response)
-        product_loader.add_value('id', response.url, re='productId=([^&]+)')
-        product_loader.add_xpath('sku', '//span[@id="itemNumber"]', re='Item #: (.+)')
-        product_loader.add_xpath('name', '//h1[@itemprop="name"]')
-        product_loader.add_xpath('brand', '//h2[@itemprop="brand"]')
-        product_loader.add_xpath('category', '//div[@class="makeup-breadcrumb"]/ul/li/a')
-        product_loader.add_xpath('category', '//div[@class="makeup-breadcrumb"]/ul/li[last()]')
-        product_loader.add_css('description', '.current-longDescription')
-        product_loader.add_xpath('reviewCount', '//meta[@itemprop="reviewCount"]/@content')
-        product_loader.add_xpath('rating', '//meta[@itemprop="ratingValue"]/@content')
-        product_loader.add_xpath('price', '//meta[@property="product:price:amount"]/@content')
-        product_loader.add_xpath('priceCurrency', '//meta[@property="product:price:currency"]/@content')
-        product_loader.add_xpath('image', '//meta[@itemprop="image"]/@content')
-        product_loader.add_xpath('promo', '//div[@id="skuPromoText"]')
-        product_loader.add_css('video', '.current-longDescription iframe::attr(src)')
-        product_loader.add_css('size', '#itemSize', re='([0-9.]+)')
-        product_loader.add_css('sizeUOM', '#itemSizeUOM')
-        product_loader.add_css('howToUse', '.current-directions')
-        product_loader.add_css('ingredients', '.current-ingredients')
-        product_loader.add_css('restrictions', '.product-restriction-text')
-        product_loader.add_css('hairType', '.pr-other-attribute-hairtype .pr-other-attribute-value')
-        product_loader.add_css('beautyRoutine', '.pr-other-attribute-beautyroutine .pr-other-attribute-value')
-        product_loader.add_css('reviewersProfile', '.pr-other-attribute-describeyourself .pr-other-attribute-value')
-        product_loader.add_css('gift', '.pr-other-attribute-wasthisagift .pr-other-attribute-value')
-        product_loader.add_xpath('recommendationPercentage', '//p[@class="pr-snapshot-consensus-value pr-rounded"]', re='([0-9]+)')
-        product_loader.add_xpath('pros', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-pros")]/div[@class="pr-attribute-value"]/ul/li')
-        product_loader.add_xpath('cons', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-cons")]/div[@class="pr-attribute-value"]/ul/li')
-        product_loader.add_xpath('bestUses', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-bestuses")]/div[@class="pr-attribute-value"]/ul/li')
-        product_loader.add_value('url', response.url)
-        product = product_loader.load_item()
+        product = self.extract_product(response)
         product['reviews'] = []
-
+        yield product
         # Collect reviews if any, otherwise yield collected data
         yield self.build_reviews_request(product)
 
@@ -65,7 +37,7 @@ class UltaProductsSpider(SitemapSpider):
 
     def parse_reviews(self, response):
         """Extract product reviews"""
-        product = response.meta['product']
+        product = response.meta.get('product')
         if response.status == 404:
             yield product
         else:
@@ -100,7 +72,7 @@ class UltaProductsSpider(SitemapSpider):
             # Collect more reviews if any
             page = response.meta['page'] + 1
             yield self.build_reviews_request(product, page)
-                
+
     # -------------------------------------------------------------------------
 
     def build_reviews_request(self, product, page=1):
@@ -127,7 +99,7 @@ class UltaProductsSpider(SitemapSpider):
         result = str(sum(ord(char) * abs(255 - ord(char)) for char in pid) % 1023)
         while len(result) % 4 != 0:
             result = '0' + result
-        parts = [result[i:i+2] for i in xrange(0, len(result), 2)]
+        parts = [result[i:i+2] for i in range(0, len(result), 2)]
         return '/'.join(parts)
 
     # -------------------------------------------------------------------------
@@ -142,5 +114,41 @@ class UltaProductsSpider(SitemapSpider):
             except AttributeError:
                 pass
         return None
+
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def extract_product(response):
+        """Extract product details."""
+        loader = ProductItemLoader(ProductItem(), response)
+        loader.add_value('id', response.url, re='productId=([^&]+)')
+        loader.add_xpath('sku', '//span[@id="itemNumber"]', re='(?i)Item #: (.+)')
+        loader.add_xpath('name', '//h1[@itemprop="name"]')
+        loader.add_xpath('brand', '//h2[@itemprop="brand"]')
+        loader.add_xpath('category', '//div[@class="makeup-breadcrumb"]/ul/li/a')
+        loader.add_xpath('category', '//div[@class="makeup-breadcrumb"]/ul/li[last()]')
+        loader.add_css('description', '.current-longDescription')
+        loader.add_xpath('reviewCount', '//meta[@itemprop="reviewCount"]/@content')
+        loader.add_xpath('rating', '//meta[@itemprop="ratingValue"]/@content')
+        loader.add_xpath('price', '//meta[@property="product:price:amount"]/@content')
+        loader.add_xpath('priceCurrency', '//meta[@property="product:price:currency"]/@content')
+        loader.add_xpath('image', '//meta[@itemprop="image"]/@content')
+        loader.add_xpath('promo', '//div[@id="skuPromoText"]')
+        loader.add_css('video', '.current-longDescription iframe::attr(src)')
+        loader.add_css('size', '#itemSize', re='([0-9.]+)')
+        loader.add_css('sizeUOM', '#itemSizeUOM')
+        loader.add_css('howToUse', '.current-directions')
+        loader.add_css('ingredients', '.current-ingredients')
+        loader.add_css('restrictions', '.product-restriction-text')
+        loader.add_css('hairType', '.pr-other-attribute-hairtype .pr-other-attribute-value')
+        loader.add_css('beautyRoutine', '.pr-other-attribute-beautyroutine .pr-other-attribute-value')
+        loader.add_css('reviewersProfile', '.pr-other-attribute-describeyourself .pr-other-attribute-value')
+        loader.add_css('gift', '.pr-other-attribute-wasthisagift .pr-other-attribute-value')
+        loader.add_xpath('recommendationPercentage', '//p[@class="pr-snapshot-consensus-value pr-rounded"]', re='([0-9]+)')
+        loader.add_xpath('pros', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-pros")]/div[@class="pr-attribute-value"]/ul/li')
+        loader.add_xpath('cons', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-cons")]/div[@class="pr-attribute-value"]/ul/li')
+        loader.add_xpath('bestUses', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-bestuses")]/div[@class="pr-attribute-value"]/ul/li')
+        loader.add_value('url', response.url)
+        return loader.load_item()
 
 # END =========================================================================

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Items"""
+"""Items."""
 
 # Imports =====================================================================
 
@@ -8,20 +8,9 @@ import scrapy
 
 # Items =======================================================================
 
-class BaseItem(scrapy.Item):
-    """Base item"""
-    def __init__(self, *args, **kwargs):
-        super(BaseItem, self).__init__(*args, **kwargs)
+class ProductItem(scrapy.Item):
+    """Product item."""
 
-        # Set fields default value to None
-        for field, meta in self.fields.items():
-            if not self.get(field, None):
-                self._values[field] = meta.get('default', None)
-
-# -----------------------------------------------------------------------------
-
-class ProductItem(BaseItem):
-    """Product item"""
     id = scrapy.Field()
     sku = scrapy.Field()
     name = scrapy.Field()
@@ -54,8 +43,9 @@ class ProductItem(BaseItem):
 
 # -----------------------------------------------------------------------------
 
-class ReviewItem(BaseItem):
-    """Review item"""
+class ReviewItem(scrapy.Item):
+    """Review item."""
+
     title = scrapy.Field()
     description = scrapy.Field()
     rating = scrapy.Field()
@@ -68,8 +58,9 @@ class ReviewItem(BaseItem):
 
 # -----------------------------------------------------------------------------
 
-class ReviewerItem(BaseItem):
-    """Reviewer item"""
+class ReviewerItem(scrapy.Item):
+    """Reviewer item."""
+
     name = scrapy.Field()
     skinType = scrapy.Field()
     bio = scrapy.Field()

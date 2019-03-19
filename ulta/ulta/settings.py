@@ -8,7 +8,8 @@ SPIDER_MODULES = ['ulta.spiders']
 NEWSPIDER_MODULE = 'ulta.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' \
+    ' (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -34,9 +35,10 @@ ITEM_PIPELINES = {
 }
 
 # Retry configuration
-RETRY_TIMES = 5
-
-HTTP_RETRY_CODES = [500, 502, 503, 504, 400, 403, 408]
+RETRY_ENABLED = True
+RETRY_TIMES = 9
+RETRY_HTTP_CODES = [400, 403, 408, 421, 429, 500, 502, 503, 504, 522, 524]
+RETRY_PRIORITY_ADJUST = -4
 
 # Enable and configure the AutoThrottle extension
 AUTOTHROTTLE_ENABLED = False
