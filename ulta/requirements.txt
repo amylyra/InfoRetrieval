@@ -1,3 +1,2 @@
-demjson
 python-dateutil
-Scrapy
+scrapy

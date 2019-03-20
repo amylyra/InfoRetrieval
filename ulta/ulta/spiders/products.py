@@ -4,13 +4,13 @@
 
 # Imports =====================================================================
 
-import re
-import demjson
+import json
+
 import scrapy
 
 from scrapy.spiders import SitemapSpider
 from ulta.items import ProductItem, ReviewItem, ReviewerItem
-from ulta.loaders import ProductItemLoader, ReviewItemLoader, ReviewerItemLoader
+from ulta.loaders import ProductItemLoader
 
 # Spider ======================================================================
 
@@ -18,7 +18,7 @@ class UltaProductsSpider(SitemapSpider):
     """Ulta products spider."""
 
     name = 'products'
-    allowed_domains = ['ulta.com']
+    allowed_domains = ['ulta.com', 'powerreviews.com']
     sitemap_urls = ['http://www.ulta.com/robots.txt']
     sitemap_follow = ['/detail[0-9]+.xml']
     sitemap_rules = [('product', 'parse_product')]
@@ -26,94 +26,75 @@ class UltaProductsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def parse_product(self, response):
-        """Extract product details"""
+        """
+        Parse product details.
+
+        @url https://www.ulta.com/automatic-eye-liner?productId=1612
+        @returns requests 1 1
+        """
         product = self.extract_product(response)
-        product['reviews'] = []
-        yield product
-        # Collect reviews if any, otherwise yield collected data
-        yield self.build_reviews_request(product)
+        return self.reviews_request(product)
 
     # -------------------------------------------------------------------------
 
     def parse_reviews(self, response):
-        """Extract product reviews"""
-        product = response.meta.get('product')
-        if response.status == 404:
-            yield product
-        else:
-            reviews_data = re.search('= (.+);', response.body).groups()[0]
-            reviews_data = re.sub(r'\b0([0-9.]+)\b', '\\1', reviews_data)
-            reviews_list = [each['r'] for each in demjson.decode(reviews_data)]
-            for each in reviews_list:
-                # Extract review information
-                review_loader = ReviewItemLoader(ReviewItem())
-                review_loader.add_value('title', each.get('h', None))
-                review_loader.add_value('description', each.get('p', None))
-                review_loader.add_value('rating', each.get('r', None))
-                review_loader.add_value('datePublished', each.get('db', None))
-                review_loader.add_value('pros', self.get_value(each.get('g', []), 'pros'))
-                review_loader.add_value('cons', self.get_value(each.get('g', []), 'cons'))
-                review_loader.add_value('bestUses', self.get_value(each.get('g', []), 'bestuses'))
-                review_loader.add_value('bottomLine', each.get('b', {}).get('k', None))
-                review = review_loader.load_item()
+        """
+        Parse product reviews.
 
-                # Extract reviewer information
-                reviewer_loader = ReviewerItemLoader(ReviewerItem())
-                reviewer_loader.add_value('name', each.get('n', None))
-                reviewer_loader.add_value('skinType', self.get_value(each.get('g', []), 'skintype'))
-                reviewer_loader.add_value('bio', self.get_value(each.get('g', []), 'describeyourself'))
-                reviewer_loader.add_value('age', self.get_value(each.get('g', []), 'age'))
-                reviewer_loader.add_value('location', each['w'])
-                reviewer = reviewer_loader.load_item()
+        @url https://display.powerreviews.com/m/6406/l/en_US/product/xlsImpprod5020095/reviews?apikey=daa0f241-c242-4483-afb7-4449942d1a2b
+        @returns requests 1 1
+        """
+        product = response.meta.get('product') or ProductItem()
+        product['reviews'] = product.get('reviews') or []
 
-                review['reviewer'] = reviewer
-                product['reviews'].append(review)
+        data = json.loads(response.text)
 
-            # Collect more reviews if any
-            page = response.meta['page'] + 1
-            yield self.build_reviews_request(product, page)
-
-    # -------------------------------------------------------------------------
-
-    def build_reviews_request(self, product, page=1):
-        """Build request to collect reviews"""
-        pid = product['id']
-        encoded_pid = self.encode_pid(pid)
-        url_format = 'http://www.ulta.com/reviewcenter/pwr/content/{encoded_pid}/{pid}-en_US-{page}-reviews.js'
-        url = url_format.format(encoded_pid=encoded_pid, pid=pid, page=page)
-        return scrapy.Request(
-            url,
-            callback=self.parse_reviews,
-            meta={
-                'product': product,
-                'page': page,
-                'handle_httpstatus_list': [404],
+        rollup = data['results'][0].get('rollup')
+        if rollup:
+            product['rating_histogram'] = {
+                stars: count
+                for stars, count in enumerate(rollup.get('rating_histogram', []), start=1)
             }
+            product['rating'] = rollup.get('average_rating')
+            product['review_count'] = rollup.get('review_count')
+            product['recommended_ratio'] = rollup.get('recommended_ratio')
+            product['faceoff_positive'] = rollup.get('faceoff_positive')
+            product['faceoff_negative'] = rollup.get('faceoff_negative')
+            product['properties'] = {
+                property['name']: {
+                    value['label']: value['count']
+                    for value in property.get('values', [])[:5]
+                }
+                for property in rollup.get('properties', {})
+            }
+
+        reviews = data['results'][0].get('reviews', [])
+        for each in reviews:
+            review = self.extract_review(each)
+            review['reviewer'] = self.extract_reviewer(each)
+            product['reviews'].append(review)
+
+        next_page = data['paging'].get('next_page_url')
+        if next_page:
+            return response.follow(
+                next_page,
+                callback=self.parse_reviews,
+                meta={'product': product}
+            )
+
+        return product
+
+    # -------------------------------------------------------------------------
+
+    def reviews_request(self, product):
+        """Return product reviews request."""
+        return scrapy.FormRequest(
+            method='GET',
+            url='https://display.powerreviews.com/m/6406/l/en_US/product/%s/reviews' % product['id'],
+            formdata={'apikey': 'daa0f241-c242-4483-afb7-4449942d1a2b'},
+            callback=self.parse_reviews,
+            meta={'product': product}
         )
-
-    # -------------------------------------------------------------------------
-
-    @staticmethod
-    def encode_pid(pid):
-        """Encodes PID according to Ulta algorithm"""
-        result = str(sum(ord(char) * abs(255 - ord(char)) for char in pid) % 1023)
-        while len(result) % 4 != 0:
-            result = '0' + result
-        parts = [result[i:i+2] for i in range(0, len(result), 2)]
-        return '/'.join(parts)
-
-    # -------------------------------------------------------------------------
-
-    @staticmethod
-    def get_value(data, needle, key='k', value='v'):
-        """Get value that match key"""
-        for each in data:
-            try:
-                if each.get(key, '').lower() == needle.lower():
-                    return each[value]
-            except AttributeError:
-                pass
-        return None
 
     # -------------------------------------------------------------------------
 
@@ -121,34 +102,71 @@ class UltaProductsSpider(SitemapSpider):
     def extract_product(response):
         """Extract product details."""
         loader = ProductItemLoader(ProductItem(), response)
-        loader.add_value('id', response.url, re='productId=([^&]+)')
-        loader.add_xpath('sku', '//span[@id="itemNumber"]', re='(?i)Item #: (.+)')
-        loader.add_xpath('name', '//h1[@itemprop="name"]')
-        loader.add_xpath('brand', '//h2[@itemprop="brand"]')
-        loader.add_xpath('category', '//div[@class="makeup-breadcrumb"]/ul/li/a')
-        loader.add_xpath('category', '//div[@class="makeup-breadcrumb"]/ul/li[last()]')
-        loader.add_css('description', '.current-longDescription')
-        loader.add_xpath('reviewCount', '//meta[@itemprop="reviewCount"]/@content')
-        loader.add_xpath('rating', '//meta[@itemprop="ratingValue"]/@content')
+        loader.add_value('id', response.url, re=r'(?i)productId=([^&]+)')
+        loader.add_css('sku', '.ProductMainSection__itemNumber::attr(data-itemnumber)')
+        loader.add_css('name', '.ProductMainSection__productName')
+        loader.add_css('brand', '.ProductMainSection__brandName')
+        loader.add_css('brand', '[property="og:brand"]::attr(content)')
+        loader.add_css('brand_page', '.ProductMainSection__brandName > a::attr(href)')
+        loader.add_xpath('category', '//div[@class="Breadcrumb"]/ul/li/a[position() > 1]')
+        loader.add_css('short_description', '[property="og:description"]::attr(content)')
+        loader.add_css('long_description', '.ProductDetail__productDetails > .ProductDetail__productContent')
         loader.add_xpath('price', '//meta[@property="product:price:amount"]/@content')
         loader.add_xpath('priceCurrency', '//meta[@property="product:price:currency"]/@content')
-        loader.add_xpath('image', '//meta[@itemprop="image"]/@content')
-        loader.add_xpath('promo', '//div[@id="skuPromoText"]')
-        loader.add_css('video', '.current-longDescription iframe::attr(src)')
-        loader.add_css('size', '#itemSize', re='([0-9.]+)')
-        loader.add_css('sizeUOM', '#itemSizeUOM')
-        loader.add_css('howToUse', '.current-directions')
-        loader.add_css('ingredients', '.current-ingredients')
-        loader.add_css('restrictions', '.product-restriction-text')
-        loader.add_css('hairType', '.pr-other-attribute-hairtype .pr-other-attribute-value')
-        loader.add_css('beautyRoutine', '.pr-other-attribute-beautyroutine .pr-other-attribute-value')
-        loader.add_css('reviewersProfile', '.pr-other-attribute-describeyourself .pr-other-attribute-value')
-        loader.add_css('gift', '.pr-other-attribute-wasthisagift .pr-other-attribute-value')
-        loader.add_xpath('recommendationPercentage', '//p[@class="pr-snapshot-consensus-value pr-rounded"]', re='([0-9]+)')
-        loader.add_xpath('pros', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-pros")]/div[@class="pr-attribute-value"]/ul/li')
-        loader.add_xpath('cons', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-cons")]/div[@class="pr-attribute-value"]/ul/li')
-        loader.add_xpath('bestUses', '//div[@class="pr-snapshot-body"]//div[contains(@class, "pr-attribute-bestuses")]/div[@class="pr-attribute-value"]/ul/li')
+        loader.add_css('image', '[property="og:image"]::attr(content)')
+        loader.add_css('offer_message', '.ProductMainSection__offerMessage')
+        loader.add_css('how_to_use', '.ProductDetail__howToUse > .ProductDetail__productContent')
+        loader.add_css('ingredients', '.ProductDetail__ingredients > .ProductDetail__productContent')
         loader.add_value('url', response.url)
         return loader.load_item()
+
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def extract_review(data):
+        """Extract review details."""
+        properties = {
+            property['key']: property['value']
+            for property in data['details'].get('properties', [])
+        }
+
+        return ReviewItem(
+            id=data['review_id'],
+            title=data['details'].get('headline'),
+            body=data['details'].get('comments'),
+            created_at=data['details'].get('created_date'),
+            updated_at=data['details'].get('updated_date'),
+            bottom_line=data['details'].get('bottom_line'),
+            pros=properties.get('pros'),
+            cons=properties.get('cons'),
+            best_uses=properties.get('bestuses'),
+            rating=data['metrics'].get('rating'),
+            helpful_votes=data['metrics'].get('helpful_votes'),
+            not_helpful_votes=data['metrics'].get('not_helpful_votes'),
+            helpful_score=data['metrics'].get('helpful_score')
+        )
+
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def extract_reviewer(data):
+        """Extract reviewer details."""
+        properties = {
+            property['key']: property['value']
+            for property in data['details'].get('properties', [])
+        }
+
+        reviewer = ReviewerItem(
+            nickname=data['details'].get('nickname'),
+            location=data['details'].get('location'),
+            badges=data.get('badges'),
+            properties=properties.get('describeyourself')
+        )
+
+        reviewer_age = properties.get('age')
+        if reviewer_age:
+            reviewer['age'] = reviewer_age
+
+        return reviewer
 
 # END =========================================================================

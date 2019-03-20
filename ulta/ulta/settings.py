@@ -31,7 +31,6 @@ TELNETCONSOLE_ENABLED = True
 
 # Item pipelines
 ITEM_PIPELINES = {
-    'ulta.pipelines.StarReviewsCounterPipeline': 300,
 }
 
 # Retry configuration

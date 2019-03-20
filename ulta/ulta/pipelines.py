@@ -4,8 +4,8 @@
 
 # Pipelines ===================================================================
 
-class StarReviewsCounterPipeline:
-    """Star reviews counter pipeline."""
+class ReviewsStatsPipeline:
+    """Reviews stats pipeline."""
 
     # -------------------------------------------------------------------------
 
@@ -23,7 +23,10 @@ class StarReviewsCounterPipeline:
             item['reviewCount'] = len(item['reviews'])
 
         if not item['rating'] and item['reviewCount'] > 0:
-            total = sum(nstar * count for nstar, count in counts.items())
+            total = sum(
+                review['rating'] for review in item['reviews']
+                if 'rating' in review
+            )
             item['rating'] = float(total) / item['reviewCount']
 
         return item
