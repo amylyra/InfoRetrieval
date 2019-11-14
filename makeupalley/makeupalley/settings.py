@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-"""Scrapy settings for makeupalley project"""
+"""Scrapy settings for makeupalley project."""
+
+import os
 
 BOT_NAME = 'makeupalley'
 
@@ -21,7 +23,7 @@ CONCURRENT_REQUESTS = 32
 DOWNLOAD_DELAY = .5
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 4
-#CONCURRENT_REQUESTS_PER_IP = 0
+CONCURRENT_REQUESTS_PER_IP = 0
 
 # Cookies
 COOKIES_ENABLED = True
@@ -48,7 +50,7 @@ AUTOTHROTTLE_START_DELAY = 1
 AUTOTHROTTLE_MAX_DELAY = 5
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-#AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
 # Enable showing throttling stats for every response received:
 AUTOTHROTTLE_DEBUG = True
 
@@ -57,7 +59,8 @@ HTTPCACHE_ENABLED = True
 HTTPCACHE_EXPIRATION_SECS = 0
 HTTPCACHE_DIR = 'httpcache'
 HTTPCACHE_IGNORE_HTTP_CODES = []
+HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
 HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-MAKEUPALLEY_USERNAME = 'getmakeup'
-MAKEUPALLEY_PASSWORD = '!makeupalley!'
+MAKEUPALLEY_USERNAME = os.getenv('MAKEUPALLEY_USERNAME')
+MAKEUPALLEY_PASSWORD = os.getenv('MAKEUPALLEY_PASSWORD')

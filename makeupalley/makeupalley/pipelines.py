@@ -17,7 +17,7 @@ class StarReviewsCounterPipeline:
                 continue
             rounded_stars = int(round(review['rating']))
             counts[review['rating']] = counts.get(rounded_stars) + 1
-        item['starReviewsCounts'] = counts
+        item['star_reviews_counts'] = counts
         return item
 
 # END =========================================================================

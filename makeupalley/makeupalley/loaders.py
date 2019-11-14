@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Item Loaders"""
+"""Item Loaders."""
 
 # Imports =====================================================================
 
@@ -49,35 +49,33 @@ def parse_int(text):
 
 # Loaders =====================================================================
 
-class ProductItemLoader(ItemLoader):
+class BaseItemLoader(ItemLoader):
+    """Base item loader."""
+
+    default_output_processor = TakeFirst()
+
+# -----------------------------------------------------------------------------
+
+class ProductItemLoader(BaseItemLoader):
     """Product item loader."""
 
-    default_output_processor = TakeFirst()
-    default_input_processor = MapCompose(clean_text)
-
-    repurchasePercentage_in = MapCompose(clean_text, parse_int)
-    reviewCount_in = MapCompose(clean_text, parse_int)
-    rating_in = MapCompose(clean_text, parse_float)
+    package_quality_in = MapCompose(parse_float)
+    repurchase_percentage_in = MapCompose(parse_int)
+    rating_in = MapCompose(parse_float)
+    review_count_in = MapCompose(parse_int)
 
 # -----------------------------------------------------------------------------
 
-class ReviewItemLoader(ItemLoader):
+class ReviewItemLoader(BaseItemLoader):
     """Review item loader."""
 
-    default_output_processor = TakeFirst()
-    default_input_processor = MapCompose(clean_text)
-
-    publishedAt_in = MapCompose(clean_text, parse_date)
-    upvotes_in = MapCompose(clean_text, parse_int)
-    totalVotes_in = MapCompose(clean_text, parse_int)
-    rating_in = MapCompose(clean_text, parse_float)
+    published_at_in = MapCompose(parse_date)
+    upvotes_in = MapCompose(parse_int)
+    total_votes_in = MapCompose(parse_int)
 
 # -----------------------------------------------------------------------------
 
-class ReviewerItemLoader(ItemLoader):
+class ReviewerItemLoader(BaseItemLoader):
     """Reviewer item loader."""
-
-    default_output_processor = TakeFirst()
-    default_input_processor = MapCompose(clean_text)
 
 # END =========================================================================

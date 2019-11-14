@@ -1,55 +1,61 @@
 # -*- coding: utf-8 -*-
 
-"""Items"""
+"""Items."""
 
 # Imports =====================================================================
 
-import scrapy
+from scrapy import Item, Field
 
 # Items =======================================================================
 
-class ProductItem(scrapy.Item):
+class BaseItem(Item):
+    """Base item."""
+
+# -----------------------------------------------------------------------------
+
+class ProductItem(BaseItem):
     """Product item."""
 
-    id = scrapy.Field()
-    name = scrapy.Field()
-    brand = scrapy.Field()
-    image = scrapy.Field()
-    category = scrapy.Field()
-    price = scrapy.Field()
-    packageQuality = scrapy.Field()
-    repurchasePercentage = scrapy.Field()
-    reviewCount = scrapy.Field()
-    rating = scrapy.Field()
-    ingredients = scrapy.Field()
-    url = scrapy.Field()
-    reviews = scrapy.Field()
-    starReviewsCounts = scrapy.Field()
+    id = Field()
+    name = Field()
+    brand = Field()
+    image = Field()
+    category = Field()
+    package_quality = Field()
+    repurchase_percentage = Field()
+    review_count = Field()
+    rating = Field()
+    url = Field()
+    reviews = Field()
+    star_reviews_counts = Field()
 
 # -----------------------------------------------------------------------------
 
-class ReviewItem(scrapy.Item):
+class ReviewItem(BaseItem):
     """Review item."""
 
-    id = scrapy.Field()
-    content = scrapy.Field()
-    rating = scrapy.Field()
-    publishedAt = scrapy.Field()
-    upvotes = scrapy.Field()
-    totalVotes = scrapy.Field()
-    reviewer = scrapy.Field()
+    id = Field()
+    content = Field()
+    rating = Field()
+    published_at = Field()
+    upvotes = Field()
+    total_votes = Field()
+    reviewer = Field()
 
 # -----------------------------------------------------------------------------
 
-class ReviewerItem(scrapy.Item):
+class ReviewerItem(BaseItem):
     """Reviewer item."""
 
-    username = scrapy.Field()
-    skin = scrapy.Field()
-    hair = scrapy.Field()
-    eyes = scrapy.Field()
-    age = scrapy.Field()
-    location = scrapy.Field()
-    profileUrl = scrapy.Field()
+    username = Field()
+    skin_type = Field()
+    skin_tone = Field()
+    skin_undertone = Field()
+    hair_color = Field()
+    hair_type = Field()
+    hair_texture = Field()
+    eye_color = Field()
+    age_range = Field()
+    reviews_count = Field()
 
 # END =========================================================================
