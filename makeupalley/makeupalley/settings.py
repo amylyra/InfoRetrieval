@@ -33,6 +33,7 @@ TELNETCONSOLE_ENABLED = True
 
 # Item pipelines
 ITEM_PIPELINES = {
+    'makeupalley.pipelines.ReviewerLocationExtractorPipeline': 200,
     'makeupalley.pipelines.StarReviewsCounterPipeline': 300,
 }
 
@@ -56,7 +57,7 @@ AUTOTHROTTLE_DEBUG = True
 
 # Enable and configure HTTP caching
 HTTPCACHE_ENABLED = True
-HTTPCACHE_EXPIRATION_SECS = 0
+HTTPCACHE_EXPIRATION_SECS = 7 * 24 * 60 * 60
 HTTPCACHE_DIR = 'httpcache'
 HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'

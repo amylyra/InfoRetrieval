@@ -56,6 +56,8 @@ class ReviewerItem(BaseItem):
     hair_texture = Field()
     eye_color = Field()
     age_range = Field()
+    state = Field()
+    country = Field()
     reviews_count = Field()
 
 # END =========================================================================

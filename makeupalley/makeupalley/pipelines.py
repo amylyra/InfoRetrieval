@@ -2,7 +2,55 @@
 
 """Item pipelines."""
 
+# Imports =====================================================================
+
+import json
+
+from scrapy.http import Request
+from twisted.internet import defer
+
 # Pipelines ===================================================================
+
+class ReviewerLocationExtractorPipeline:
+    """Extract reviewer location from profile page."""
+
+    PROFILE_PAGE = 'https://api.makeupalley.com/api/v1/users/%(username)s?scope=full'
+
+    # -------------------------------------------------------------------------
+
+    def __init__(self):
+        """Initialize pipeline."""
+        self.locations = {}
+
+    # -------------------------------------------------------------------------
+
+    @defer.inlineCallbacks
+    def process_item(self, item, spider):
+        """Extract reviewer location."""
+        for review_index, review in enumerate(item.get('reviews', [])):
+            reviewer_username = review['reviewer']['username']
+
+            if self.locations.get(reviewer_username):
+                location = self.locations[reviewer_username]
+            else:
+                response = yield spider.crawler.engine.download(
+                    Request(url=self.PROFILE_PAGE % {'username': reviewer_username}),
+                    spider
+                )
+
+                data = yield json.loads(response.text)[0]
+                location = {
+                    'state': data.get('state'),
+                    'country': data.get('country')
+                }
+                self.locations[reviewer_username] = location
+
+            item['reviews'][review_index]['reviewer']['state'] = location['state']
+            item['reviews'][review_index]['reviewer']['country'] = location['country']
+
+        defer.returnValue(item)
+
+# =============================================================================
 
 class StarReviewsCounterPipeline:
     """Star reviews counter pipeline."""
