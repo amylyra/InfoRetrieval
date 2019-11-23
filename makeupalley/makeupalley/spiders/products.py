@@ -188,7 +188,7 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
         loader.add_css('category', '.breadcrumb > .categ > a::text')
         loader.add_css('package_quality', '.packaging::text')
         loader.add_css('repurchase_percentage', '.buyagain::text', re='([0-9]+)')
-        loader.add_css('review_count', '.overall-rating::text', re=r'(\d+) reviews')
+        loader.add_css('review_count', '.overall-rating::text', re=r'(\d+) reviews?')
         loader.add_css('rating', '.lippie-rating-section .rating-value::text')
         loader.add_css('image', '.primary-image > a > img::attr(src)')
         loader.add_value('url', response.url)
