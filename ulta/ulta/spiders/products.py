@@ -7,8 +7,9 @@
 import json
 
 import scrapy
-
 from scrapy.spiders import SitemapSpider
+from furl import furl
+
 from ulta.items import ProductItem, ReviewItem, ReviewerItem
 from ulta.loaders import ProductItemLoader
 
@@ -19,13 +20,15 @@ class UltaProductsSpider(SitemapSpider):
 
     name = 'products'
     allowed_domains = ['ulta.com', 'powerreviews.com']
-    sitemap_urls = ['http://www.ulta.com/robots.txt']
+    sitemap_urls = ['https://www.ulta.com/robots.txt']
     sitemap_follow = ['/detail[0-9]+.xml']
-    sitemap_rules = [('product', 'parse_product')]
+    sitemap_rules = [('product', 'parse')]
+
+    powerreviews_apikey = 'daa0f241-c242-4483-afb7-4449942d1a2b'
 
     # -------------------------------------------------------------------------
 
-    def parse_product(self, response):
+    def parse(self, response):
         """
         Parse product details.
 
@@ -74,10 +77,13 @@ class UltaProductsSpider(SitemapSpider):
             review['reviewer'] = self.extract_reviewer(each)
             product['reviews'].append(review)
 
-        next_page = data['paging'].get('next_page_url')
-        if next_page:
+        next_page_url = data['paging'].get('next_page_url')
+        if next_page_url:
+            next_page_url = furl(next_page_url).add({
+                'apikey': self.powerreviews_apikey
+            }).url
             return response.follow(
-                next_page,
+                next_page_url,
                 callback=self.parse_reviews,
                 meta={'product': product}
             )
@@ -91,7 +97,7 @@ class UltaProductsSpider(SitemapSpider):
         return scrapy.FormRequest(
             method='GET',
             url='https://display.powerreviews.com/m/6406/l/en_US/product/%s/reviews' % product['id'],
-            formdata={'apikey': 'daa0f241-c242-4483-afb7-4449942d1a2b'},
+            formdata={'apikey': self.powerreviews_apikey},
             callback=self.parse_reviews,
             meta={'product': product}
         )
