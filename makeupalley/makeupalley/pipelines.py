@@ -38,12 +38,18 @@ class ReviewerLocationExtractorPipeline:
                     spider
                 )
 
-                data = yield json.loads(response.text)[0]
-                location = {
-                    'state': data.get('state'),
-                    'country': data.get('country')
-                }
-                self.locations[reviewer_username] = location
+                data = yield json.loads(response.text)
+
+                if response.status == 200:
+                    location = {
+                        'state': data{0].get('state'),
+                        'country': data[0].get('country')
+                    }
+                    self.locations[reviewer_username] = location
+                else:
+                    spider.logger.warning(
+                        'Item(%s): %s', item['id'], data['message']
+                    )
 
             item['reviews'][review_index]['reviewer']['state'] = location['state']
             item['reviews'][review_index]['reviewer']['country'] = location['country']
