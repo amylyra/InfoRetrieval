@@ -50,9 +50,10 @@ class ReviewerLocationExtractorPipeline:
                     spider.logger.warning(
                         'Item(%s): %s', item['id'], data['message']
                     )
+                    location = {}
 
-            item['reviews'][review_index]['reviewer']['state'] = location['state']
-            item['reviews'][review_index]['reviewer']['country'] = location['country']
+            item['reviews'][review_index]['reviewer']['state'] = location.get('state')
+            item['reviews'][review_index]['reviewer']['country'] = location.get('country')
 
         defer.returnValue(item)
 
