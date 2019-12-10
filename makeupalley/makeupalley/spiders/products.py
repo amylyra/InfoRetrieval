@@ -9,6 +9,7 @@ import json
 import scrapy
 from scrapy.http import JsonRequest
 from scrapy.exceptions import CloseSpider
+from furl import furl
 
 from makeupalley.items import ProductItem, ReviewItem, ReviewerItem
 from makeupalley.loaders import (
@@ -110,7 +111,7 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
 
         for page in response.css('.pagination .num > a'):
             page_number = int(page.css('::text').get())
-            page_url = '%s&page=%s' % (response.url, page_number)
+            page_url = furl(response.url).set({'page': page_number}).url
 
             yield response.follow(
                 url=page_url,

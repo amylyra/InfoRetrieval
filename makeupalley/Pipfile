@@ -15,6 +15,7 @@ pytz = "*"
 python-dateutil = "*"
 w3lib = "*"
 parsel = "*"
+furl = "*"
 
 [requires]
 python_version = "3.7"
