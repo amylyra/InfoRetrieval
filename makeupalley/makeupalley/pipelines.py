@@ -42,7 +42,7 @@ class ReviewerLocationExtractorPipeline:
 
                 if response.status == 200:
                     location = {
-                        'state': data{0].get('state'),
+                        'state': data[0].get('state'),
                         'country': data[0].get('country')
                     }
                     self.locations[reviewer_username] = location
