@@ -131,7 +131,7 @@ class MakeupAlleyProductsSpider(scrapy.Spider):
 
         product['reviews'] = []
         product_id = product['id']
-        review_count = product['review_count']
+        review_count = product.get('review_count', 0)
 
         if review_count == 0:
             return product
