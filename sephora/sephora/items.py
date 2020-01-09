@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Items"""
+"""Items."""
 
 # Imports =====================================================================
 
@@ -9,22 +9,13 @@ from scrapy import Item, Field
 # Items =======================================================================
 
 class BaseItem(Item):
-    """Base item"""
-
-    # -------------------------------------------------------------------------
-
-    def __init__(self, *args, **kwargs):
-        super(BaseItem, self).__init__(*args, **kwargs)
-
-        # Set fields default value
-        for field_name, meta in self.fields.items():
-            if not self.get(field_name):
-                self._values[field_name] = meta.get('default', None)
+    """Base item."""
 
 # -----------------------------------------------------------------------------
 
 class ProductItem(BaseItem):
-    """Product item"""
+    """Product item."""
+
     id = Field()
     sku = Field()
     name = Field()
@@ -56,7 +47,8 @@ class ProductItem(BaseItem):
 # -----------------------------------------------------------------------------
 
 class ProductVariationItem(BaseItem):
-    """Product variation item"""
+    """Product variation item."""
+
     sku_id = Field()
     sku_name = Field()
     list_price = Field()
@@ -72,7 +64,8 @@ class ProductVariationItem(BaseItem):
 # -----------------------------------------------------------------------------
 
 class ReviewItem(BaseItem):
-    """Review item"""
+    """Review item."""
+
     id = Field()
     rating = Field()
     title = Field()
@@ -86,7 +79,8 @@ class ReviewItem(BaseItem):
 # -----------------------------------------------------------------------------
 
 class ReviewerItem(BaseItem):
-    """Reviewer item"""
+    """Reviewer item."""
+
     id = Field()
     username = Field()
     location = Field()

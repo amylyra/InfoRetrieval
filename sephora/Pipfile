@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple/"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+prospector = {extras = ["with_everything"],version = "*"}
+scrapyd-client = "*"
+
+[packages]
+scrapy = "*"
+brotlipy = "*"
+pytz = "*"
+python-dateutil = "*"
+w3lib = "*"
+parsel = "*"
+
+[requires]
+python_version = "3.7"

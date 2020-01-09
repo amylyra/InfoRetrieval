@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Scrapy settings for sephora project"""
+"""Scrapy settings for sephora project."""
 
 BOT_NAME = 'sephora'
 
@@ -8,35 +8,36 @@ SPIDER_MODULES = ['sephora.spiders']
 NEWSPIDER_MODULE = 'sephora.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; rv:71.0) Gecko/20100101 Firefox/71.0'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy
-CONCURRENT_REQUESTS = 16
+CONCURRENT_REQUESTS = 32
 
 # Configure a delay for requests for the same website (default: 0)
-DOWNLOAD_DELAY = .3
+DOWNLOAD_DELAY = .5
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN = 16
-#CONCURRENT_REQUESTS_PER_IP = 16
+CONCURRENT_REQUESTS_PER_DOMAIN = 8
+CONCURRENT_REQUESTS_PER_IP = 0
 
 # Cookies
 COOKIES_ENABLED = True
 
 # Telnet Console
-TELNETCONSOLE_ENABLED = False
-
-# Item pipelines
-ITEM_PIPELINES = {
-    'sephora.pipelines.StarReviewsCounterPipeline': 300,
-}
+TELNETCONSOLE_ENABLED = True
 
 # Retry configuration
-RETRY_TIMES = 5
+RETRY_ENABLED = True
+RETRY_TIMES = 9
+RETRY_HTTP_CODES = [400, 403, 408, 421, 429, 500, 502, 503, 504, 522, 524]
+RETRY_PRIORITY_ADJUST = -4
 
-HTTP_RETRY_CODES = [500, 502, 503, 504, 403, 408]
+# Default request headers
+DEFAULT_REQUEST_HEADERS = {
+    'Accept-Language': 'en-US,en;q=0.5',
+}
 
 # Enable and configure the AutoThrottle extension
 AUTOTHROTTLE_ENABLED = False
@@ -46,13 +47,14 @@ AUTOTHROTTLE_START_DELAY = 1
 AUTOTHROTTLE_MAX_DELAY = 5
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-#AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
 # Enable showing throttling stats for every response received:
 AUTOTHROTTLE_DEBUG = True
 
 # Enable and configure HTTP caching
-HTTPCACHE_ENABLED = False
-HTTPCACHE_EXPIRATION_SECS = 0
+HTTPCACHE_ENABLED = True
+HTTPCACHE_EXPIRATION_SECS = 7 * 24 * 60 * 60
 HTTPCACHE_DIR = 'httpcache'
 HTTPCACHE_IGNORE_HTTP_CODES = []
+HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
 HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Sephora Products Spider"""
+"""Sephora products spider."""
 
 # Imports =====================================================================
 
@@ -20,7 +20,7 @@ from sephora.loaders import (
 # Spider ======================================================================
 
 class SephoraProductsSpider(SitemapSpider):
-    """Sephora Products Spider"""
+    """Sephora products spider."""
 
     name = 'products'
     allowed_domains = ['sephora.com', 'api.bazaarvoice.com']
@@ -29,11 +29,16 @@ class SephoraProductsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def parse(self, response):
-        """Extract product details"""
+        """
+        Extract product details.
+
+        @url https://www.sephora.com/product/double-ended-blemish-extractor-P0417
+        @returns requests 1
+        """
         blob = response.css('[data-comp="PageJSON"]::text').get()
         data = json.loads(blob)
 
-        item = self.extract_product(data[6]['props']['currentProduct'])
+        item = self.extract_product(data[3]['props']['currentProduct'])
 
         loader = ProductItemLoader(item)
         loader.add_value('url', response.url)
@@ -46,7 +51,12 @@ class SephoraProductsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def parse_reviews(self, response):
-        """Extract product reviews"""
+        """
+        Extract product reviews.
+
+        @url https://api.bazaarvoice.com/data/reviews.json?Filter=ProductId%3AP0417&Sort=SubmissionTime%3Aasc&Limit=30&Offset=0&Include=Comments&Stats=Reviews&passkey=rwbw526r2e7spptqd2qzbkp7&apiversion=5.4&Locale=en_US
+        @returns items 1
+        """
         product = response.meta.get('product') or {}
         product['reviews'] = product.get('reviews') or []
         data = json.loads(response.body)
@@ -55,7 +65,7 @@ class SephoraProductsSpider(SitemapSpider):
             review = self.extract_review(each)
             product['reviews'].append(review)
 
-        if product.get('reviews_count') > len(product['reviews']):
+        if product.get('reviews_count', 0) > len(product['reviews']):
             offset = response.meta.get('offset') + len(data['Results'])
             return self.request_reviews(product, offset=offset)
         return product
@@ -63,28 +73,33 @@ class SephoraProductsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def request_reviews(self, product, offset=0, limit=30):
-        """Request reviews"""
+        """Request reviews."""
         return scrapy.FormRequest(
             method='GET',
             url='https://api.bazaarvoice.com/data/reviews.json',
             formdata={
                 'Filter': 'ProductId:%s' % product['id'],
-                'Sort': 'Helpfulness:desc',
+                'Sort': 'SubmissionTime:asc',
                 'Limit': str(limit),
                 'Offset': str(offset),
                 'Include': 'Comments',
                 'Stats': 'Reviews',
                 'passkey': 'rwbw526r2e7spptqd2qzbkp7',
-                'apiversion': '5.4'
+                'apiversion': '5.4',
+                'Locale': 'en_US',
             },
-            meta={'offset': offset, 'limit': limit, 'product': product},
+            meta={
+                'offset': offset,
+                'limit': limit,
+                'product': product
+            },
             callback=self.parse_reviews
         )
 
     # -------------------------------------------------------------------------
 
     def extract_product(self, data):
-        """Extract product details"""
+        """Extract product details."""
         loader = ProductItemLoader(ProductItem())
         loader.add_value('id', data.get('productId'))
         loader.add_value('sku', data.get('fullSiteProductUrl'), re=r'(?i)skuId=([^&]+)')
@@ -122,7 +137,7 @@ class SephoraProductsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def extract_product_variation(self, data):
-        """Extract product variation"""
+        """Extract product variation."""
         loader = ProductVariationItemLoader(ProductVariationItem())
         loader.add_value('sku_id', data.get('skuId'))
         loader.add_value('sku_name', data.get('skuName'))
@@ -140,7 +155,7 @@ class SephoraProductsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def extract_review(self, data):
-        """Extract review details"""
+        """Extract review details."""
         loader = ReviewItemLoader(ReviewItem())
         loader.add_value('id', data.get('Id'))
         loader.add_value('rating', data.get('Rating'))
@@ -156,7 +171,7 @@ class SephoraProductsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def extract_reviewer(self, data):
-        """Extract reviewer details"""
+        """Extract reviewer details."""
         loader = ReviewerItemLoader(ReviewerItem())
         loader.add_value('id', data.get('AuthorId'))
         loader.add_value('username', data.get('UserNickname'))

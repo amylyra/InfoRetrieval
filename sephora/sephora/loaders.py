@@ -1,53 +1,53 @@
 # -*- coding: utf-8 -*-
 
-"""Item Loaders"""
+"""Item Loaders."""
 
 # Imports =====================================================================
 
 import re
-import datetime
 import dateutil.parser
 
 from scrapy.loader import ItemLoader
-from scrapy.loader.processors import TakeFirst, MapCompose, Join, Identity
+from scrapy.loader.processors import TakeFirst, MapCompose, Identity
 from w3lib.html import remove_tags, replace_entities
 
 # Processors ==================================================================
 
 def clean_text(text):
-    """Clean text from tags, replace entities and normalize whitespaces"""
-    text = remove_tags(unicode(text))
+    """Clean text from tags, replace entities and normalize whitespaces."""
+    text = remove_tags(str(text))
     text = replace_entities(text)
     return re.sub(r'(\s)+', '\\1', text).strip()
 
 # -----------------------------------------------------------------------------
 
 def parse_date(text):
-    """Parse dates from a string into a datetime object"""
+    """Parse dates from a string into a datetime object."""
     return dateutil.parser.parse(text)
 
 # -----------------------------------------------------------------------------
 
 def parse_float(text):
-    """Parse float numbers"""
+    """Parse float numbers."""
     return float(text.replace(',', '') if text else 0)
 
 # -----------------------------------------------------------------------------
 
 def parse_int(text):
-    """Parse int numbers"""
+    """Parse int numbers."""
     return int(text.replace(',', '') if text else 0)
 
 # -----------------------------------------------------------------------------
 
 def parse_bool(text):
-    """Parse booleans"""
+    """Parse booleans."""
     return text.lower() in ['true', 'yes']
 
 # Loaders =====================================================================
 
 class ProductItemLoader(ItemLoader):
-    """Product item loader"""
+    """Product item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
@@ -66,7 +66,8 @@ class ProductItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ProductVariationItemLoader(ItemLoader):
-    """Product variation item loader"""
+    """Product variation item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
@@ -80,7 +81,8 @@ class ProductVariationItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ReviewItemLoader(ItemLoader):
-    """Review item loader"""
+    """Review item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
@@ -94,7 +96,8 @@ class ReviewItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ReviewerItemLoader(ItemLoader):
-    """Reviewer item loader"""
+    """Reviewer item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 

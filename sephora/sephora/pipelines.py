@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-"""Pipelines"""
+"""Pipelines."""
 
 # Pipelines ===================================================================
 
-class StarReviewsCounterPipeline(object):
-    """Star reviews counter pipeline"""
+class StarReviewsCounterPipeline:
+    """Star reviews counter pipeline."""
 
     # -------------------------------------------------------------------------
 
     def process_item(self, item, spider):
-        """Count star reviews"""
+        """Count star reviews."""
         counts = {star: 0 for star in [1, 2, 3, 4, 5]}
         if item.get('reviews'):
             for review in item['reviews']:
