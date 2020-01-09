@@ -28,15 +28,23 @@ COOKIES_ENABLED = True
 # Telnet Console
 TELNETCONSOLE_ENABLED = True
 
+# Downloader middlewares
+DOWNLOADER_MIDDLEWARES = {
+    'sephora.middlewares.GeoRetryMiddleware': 555,
+}
+
 # Retry configuration
 RETRY_ENABLED = True
 RETRY_TIMES = 9
 RETRY_HTTP_CODES = [400, 403, 408, 421, 429, 500, 502, 503, 504, 522, 524]
 RETRY_PRIORITY_ADJUST = -4
 
+GEO_RETRY_ENABLED = True
+GEO_RETRY_ALLOWED_DOMAINS = ['sephora.com', 'bazaarvoice.com']
+
 # Default request headers
 DEFAULT_REQUEST_HEADERS = {
-    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Language': 'en-US,en',
 }
 
 # Enable and configure the AutoThrottle extension

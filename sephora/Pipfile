@@ -14,6 +14,7 @@ pytz = "*"
 python-dateutil = "*"
 w3lib = "*"
 parsel = "*"
+tldextract = "*"
 
 [requires]
 python_version = "3.7"
