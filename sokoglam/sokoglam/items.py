@@ -1,73 +1,72 @@
 # -*- coding: utf-8 -*-
 
-"""Items"""
+"""Items."""
 
 # Imports =====================================================================
 
-import scrapy
+from scrapy import Item, Field
 
 # Items =======================================================================
 
-class BaseItem(scrapy.Item):
-    """Base item"""
-    def __init__(self, *args, **kwargs):
-        super(BaseItem, self).__init__(*args, **kwargs)
-
-        # Set fields default value to None
-        for field, meta in self.fields.items():
-            if not self.get(field, None):
-                self._values[field] = meta.get('default', None)
+class BaseItem(Item):
+    """Base item."""
 
 # -----------------------------------------------------------------------------
 
 class ProductItem(BaseItem):
-    """Product item"""
-    id = scrapy.Field()
-    sku = scrapy.Field()
-    barcode = scrapy.Field()
-    name = scrapy.Field()
-    type = scrapy.Field()
-    brand = scrapy.Field()
-    description = scrapy.Field()
-    tags = scrapy.Field()
-    handle = scrapy.Field()
-    priceCurrency = scrapy.Field()
-    price = scrapy.Field()
-    featuredImage = scrapy.Field()
-    images = scrapy.Field()
-    video = scrapy.Field()
-    howTo = scrapy.Field()
-    staffReview = scrapy.Field()
-    category = scrapy.Field()
-    reviewCount = scrapy.Field()
-    rating = scrapy.Field()
-    keyIngredients = scrapy.Field()
-    fullIngredients = scrapy.Field()
-    availability = scrapy.Field()
-    inventoryQuantity = scrapy.Field()
-    url = scrapy.Field()
-    reviews = scrapy.Field()
-    starReviewsCounts = scrapy.Field()
+    """Product item."""
+
+    id = Field()
+    sku = Field()
+    barcode = Field()
+    name = Field()
+    type = Field()
+    brand = Field()
+    description = Field()
+    tags = Field()
+    handle = Field()
+    price_currency = Field()
+    price = Field()
+    price_min = Field()
+    price_max = Field()
+    featured_image = Field()
+    images = Field()
+    video = Field()
+    how_to = Field()
+    staff_review = Field()
+    category = Field()
+    review_count = Field()
+    rating = Field()
+    key_ingredients = Field()
+    full_ingredients = Field()
+    availability = Field()
+    inventory_quantity = Field()
+    published_at = Field()
+    url = Field()
+    reviews = Field()
+    star_reviews_counts = Field()
 
 # -----------------------------------------------------------------------------
 
 class ReviewItem(BaseItem):
-    """Review item"""
-    title = scrapy.Field()
-    description = scrapy.Field()
-    rating = scrapy.Field()
-    datePublished = scrapy.Field()
-    upvotes = scrapy.Field()
-    downvotes = scrapy.Field()
-    reviewer = scrapy.Field()
+    """Review item."""
+
+    title = Field()
+    description = Field()
+    rating = Field()
+    date_published = Field()
+    upvotes = Field()
+    downvotes = Field()
+    reviewer = Field()
 
 # -----------------------------------------------------------------------------
 
 class ReviewerItem(BaseItem):
-    """Reviewer item"""
-    name = scrapy.Field()
-    age = scrapy.Field()
-    skinType = scrapy.Field()
-    verifiedBuyer = scrapy.Field()
+    """Reviewer item."""
+
+    name = Field()
+    age = Field()
+    skin_type = Field()
+    verified_buyer = Field()
 
 # END =========================================================================
