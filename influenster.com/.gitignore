@@ -72,6 +72,13 @@ instance/
 # SpiderKeeper stuff:
 .spiderkeeper
 
+# yacron stuff
+yacrontab.yaml
+yacrontab.yml
+
+# tldextract stuff
+.tld_set
+
 # Sphinx documentation
 docs/_build/
 
@@ -112,3 +119,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# data
+*.zip
+*.jl
+*.csv

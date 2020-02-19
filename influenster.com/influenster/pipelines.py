@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-"""Pipelines"""
+"""Pipelines."""
 
 # Pipelines ===================================================================
 
 class StarReviewsCounterPipeline:
-    """Star reviews counter pipeline"""
+    """Star reviews counter pipeline."""
 
     # -------------------------------------------------------------------------
 
     def process_item(self, item, spider):
-        """Count star reviews"""
+        """Count star reviews."""
         if not item.get('reviews'):
             return item
 

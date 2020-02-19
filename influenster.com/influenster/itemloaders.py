@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""items loaders"""
+"""items loaders."""
 
 # Imports =====================================================================
 
@@ -12,7 +12,8 @@ from influenster.utils import clean_text, parse_float, parse_int, parse_date
 # Loaders =====================================================================
 
 class ProductItemLoader(ItemLoader):
-    """Product item loader"""
+    """Product item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
@@ -26,7 +27,8 @@ class ProductItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ReviewItemLoader(ItemLoader):
-    """Review item loader"""
+    """Review item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
@@ -36,7 +38,8 @@ class ReviewItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ReviewerItemLoader(ItemLoader):
-    """Reviewer item loader"""
+    """Reviewer item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 

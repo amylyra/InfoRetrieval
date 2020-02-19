@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Utility functions"""
+"""Utility functions."""
 
 # Imports =====================================================================
 
@@ -20,7 +20,7 @@ FLOAT_REGEX = re.compile(r'(?P<extract>[+-]?(\d+([.]\d*)?|[.]\d+))', re.UNICODE)
 # =============================================================================
 
 def clean_text(text):
-    """Clean text from tags, replace entities and normalize whitespaces"""
+    """Clean text from tags, replace entities and normalize whitespaces."""
     if not isinstance(text, six.string_types):
         return text
     text = remove_tags(text)
@@ -33,7 +33,7 @@ def clean_text(text):
 # -----------------------------------------------------------------------------
 
 def parse_date(value):
-    """Parse dates from a string into a datetime object"""
+    """Parse dates from a string into a datetime object."""
     if isinstance(value, datetime.datetime):
         return value
 
@@ -45,7 +45,7 @@ def parse_date(value):
 # -----------------------------------------------------------------------------
 
 def parse_float(text):
-    """Parse float numbers"""
+    """Parse float numbers."""
     if not isinstance(text, six.string_types):
         return text
 
@@ -61,7 +61,7 @@ def parse_float(text):
 # -----------------------------------------------------------------------------
 
 def parse_int(text):
-    """Parse integer numbers"""
+    """Parse integer numbers."""
     if not isinstance(text, six.string_types):
         return text
 
@@ -77,7 +77,7 @@ def parse_int(text):
 # ----------------------------------------------------------------------------
 
 def parse_bool(text):
-    """Parse booleans"""
+    """Parse booleans."""
     return text.lower() in ['true', 'yes']
 
 # END ========================================================================

@@ -12,4 +12,3 @@ end_of_line = lf
 
 [Makefile]
 indent_style = tab
-
