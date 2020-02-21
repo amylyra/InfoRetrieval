@@ -4,12 +4,13 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-pylint = "*"
+prospector = {extras = ["with_everything"],version = "*"}
+scrapyd-client = "*"
 
 [packages]
-scrapy = "*"
 python-dateutil = "*"
-scrapy-fake-useragent = "*"
+scrapy = "*"
+brotlipy = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"

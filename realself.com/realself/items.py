@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""items"""
+"""Items."""
 
 # Imports =====================================================================
 
@@ -9,7 +9,8 @@ from scrapy import Item, Field
 # Items =======================================================================
 
 class TreatmentItem(Item):
-    """Treatment item"""
+    """Treatment item."""
+
     id = Field()
     name = Field()
     treated_at = Field()
@@ -19,7 +20,8 @@ class TreatmentItem(Item):
 # -----------------------------------------------------------------------------
 
 class ReviewItem(Item):
-    """Review item"""
+    """Review item."""
+
     id = Field()
     title = Field()
     url = Field()
@@ -33,7 +35,8 @@ class ReviewItem(Item):
 # -----------------------------------------------------------------------------
 
 class ReviewEntryItem(Item):
-    """Review item"""
+    """Review item."""
+
     id = Field()
     title = Field()
     body = Field()
@@ -45,7 +48,8 @@ class ReviewEntryItem(Item):
 # -----------------------------------------------------------------------------
 
 class ReviewerItem(Item):
-    """Reviewer item"""
+    """Reviewer item."""
+
     id = Field()
     username = Field()
     avatar_url = Field()
@@ -54,7 +58,8 @@ class ReviewerItem(Item):
 # -----------------------------------------------------------------------------
 
 class DoctorReviewItem(Item):
-    """Doctor review item"""
+    """Doctor review item."""
+
     id = Field()
     name = Field()
     title = Field()

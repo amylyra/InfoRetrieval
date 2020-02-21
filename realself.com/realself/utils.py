@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-"""Utility functions"""
+"""Utility functions."""
 
 # Imports =====================================================================
 
 import re
 import datetime
 
-import six
 import dateutil.parser
 from parsel.utils import extract_regex
 from w3lib.html import remove_tags, replace_entities
@@ -20,8 +19,8 @@ FLOAT_REGEX = re.compile(r'(?P<extract>[+-]?(\d+([.]\d*)?|[.]\d+))', re.UNICODE)
 # =============================================================================
 
 def clean_text(text):
-    """Clean text from tags, replace entities and normalize whitespaces"""
-    if not isinstance(text, six.string_types):
+    """Clean text from tags, replace entities and normalize whitespaces."""
+    if not isinstance(text, str):
         return text
     text = remove_tags(text)
     text = replace_entities(text)
@@ -33,7 +32,7 @@ def clean_text(text):
 # -----------------------------------------------------------------------------
 
 def parse_date(value):
-    """Parse dates from a string into a datetime object"""
+    """Parse dates from a string into a datetime object."""
     if isinstance(value, datetime.datetime):
         return value
 
@@ -45,8 +44,8 @@ def parse_date(value):
 # -----------------------------------------------------------------------------
 
 def parse_float(text):
-    """Parse float numbers"""
-    if not isinstance(text, six.string_types):
+    """Parse float numbers."""
+    if not isinstance(text, str):
         return text
 
     try:
@@ -61,8 +60,8 @@ def parse_float(text):
 # -----------------------------------------------------------------------------
 
 def parse_int(text):
-    """Parse integer numbers"""
-    if not isinstance(text, six.string_types):
+    """Parse integer numbers."""
+    if not isinstance(text, str):
         return text
 
     try:
@@ -77,7 +76,7 @@ def parse_int(text):
 # ----------------------------------------------------------------------------
 
 def parse_bool(text):
-    """Parse booleans"""
+    """Parse booleans."""
     return text.lower() in ['true', 'yes']
 
 # END ========================================================================

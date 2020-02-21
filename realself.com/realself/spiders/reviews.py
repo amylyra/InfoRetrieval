@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""realself.com products spider"""
+"""realself.com reviews spider."""
 
 # Imports =====================================================================
 
@@ -18,21 +18,21 @@ from realself.itemloaders import (
 # Spider ======================================================================
 
 class ReviewsSpider(SitemapSpider):
-    """realself.com products spider"""
+    """realself.com reviews spider."""
 
     name = 'reviews'
     allowed_domains = ['realself.com']
     sitemap_urls = ['https://www.realself.com/XMLSitemap']
     sitemap_rules = [
-        ('/review/', 'parse_review'),
+        ('/review/', 'parse'),
     ]
     sitemap_follow = ['/xmlsitemap-Review']
 
     # -------------------------------------------------------------------------
 
-    def parse_review(self, response):
+    def parse(self, response):
         """
-        Extract review details
+        Extract review details.
 
         @url https://www.realself.com/review/san-diego-ca-tummy-tuck-46-years-11-years-overdue-finally-tt-w-lipo?offset=0&sle=0
         @returns items 1 1
@@ -40,7 +40,7 @@ class ReviewsSpider(SitemapSpider):
         """
         loader = ReviewItemLoader(ReviewItem(), response)
         loader.add_css('id', '[property="rs:content-id"]::attr(content)')
-        loader.add_css('title', '#review-view h1')
+        loader.add_css('title', 'h1.Headline')
         loader.add_css('tags', '[name="sailthru.tags"]::attr(content)')
         loader.add_css('helpful_count', '[name="sailthru.vote-count"]::attr(content)')
         loader.add_value('reviewer', self.extract_reviewer(response))
@@ -53,7 +53,7 @@ class ReviewsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def extract_review_entries(self, selector):
-        """Extract review entries"""
+        """Extract review entries."""
         entries = []
         for each in selector.css('#review-entries .review-entry'):
             entry = self.extract_review_entry(each)
@@ -63,7 +63,7 @@ class ReviewsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def extract_review_entry(self, selector):
-        """Extract review entry details"""
+        """Extract review entry details."""
         loader = ReviewEntryItemLoader(ReviewEntryItem(), selector)
         loader.add_css('title', '.Content-title')
         loader.add_css('body', '.Content-bodyText')
@@ -76,7 +76,7 @@ class ReviewsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def extract_reviewer(self, selector):
-        """Extract reviewer details"""
+        """Extract reviewer details."""
         loader = ReviewerItemLoader(ReviewerItem(), selector)
         loader.add_css('id', '[property="rs:author-user-id"]::attr(content)')
         loader.add_css('username', '[property="rs:author-user-name"]::attr(content)')
@@ -87,7 +87,7 @@ class ReviewsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def extract_treatment(self, selector):
-        """Extract treatment details"""
+        """Extract treatment details."""
         loader = TreatmentItemLoader(TreatmentItem(), selector)
         loader.add_css('id', '[property="rs:topic-id"]::attr(content)')
         loader.add_css('name', '[property="rs:topic-name"]::attr(content)')
@@ -99,7 +99,7 @@ class ReviewsSpider(SitemapSpider):
     # -------------------------------------------------------------------------
 
     def extract_doctor_review(self, selector):
-        """Extract doctor review details"""
+        """Extract doctor review details."""
         loader = DoctorReviewItemLoader(DoctorReviewItem(), selector)
         loader.add_css('id', '[property="rs:doctor-id"]::attr(content)')
         loader.add_css('name', '[property="rs:doctor-name"]::attr(content)')
