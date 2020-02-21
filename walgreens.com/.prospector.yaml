@@ -1,0 +1,41 @@
+strictness: veryhigh
+test-warnings: false
+doc-warnings: true
+member-warnings: false
+
+pylint:
+    run: true
+    disable:
+        - no-self-use
+        - too-few-public-methods
+        - too-many-arguments
+        - line-too-long
+
+pep8:
+    run: true
+    full: true
+    disable:
+        - E302
+        - E305
+        - E501
+
+pep257:
+    disable:
+        - D104
+        - D203
+        - D212
+
+mccabe:
+    run: true
+
+dodgy:
+    run: true
+
+pyflakes:
+    run: true
+
+vulture:
+    run: false
+
+pyroma:
+    run: true

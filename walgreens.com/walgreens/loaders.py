@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Item Loaders"""
+"""Item loaders."""
 
 # Imports =====================================================================
 
@@ -15,13 +15,13 @@ from w3lib.html import remove_tags, replace_entities
 # Processors ==================================================================
 
 def normalize_whitespace(text):
-    """Normalize whitespace"""
+    """Normalize whitespace."""
     return re.sub(r'(\s)+', '\\1', text, flags=re.UNICODE).strip()
 
 # -----------------------------------------------------------------------------
 
 def clean_text(text):
-    """Clean text from tags, replace entities and normalize whitespaces"""
+    """Clean text from tags, replace entities and normalize whitespaces."""
     text = remove_tags(str(text))
     text = replace_entities(text)
     return normalize_whitespace(text)
@@ -29,40 +29,41 @@ def clean_text(text):
 # -----------------------------------------------------------------------------
 
 def to_markdown(html):
-    """Convert HTML to markdown formatted text"""
+    """Convert HTML to markdown formatted text."""
     parser = html2text.HTML2Text()
-    parser.body_width = 0 # no wrapping
+    parser.body_width = 0  # no wrapping
     text = parser.handle(html)
     return normalize_whitespace(text)
 
 # -----------------------------------------------------------------------------
 
 def parse_date(text):
-    """Parse dates from a string into a datetime object"""
+    """Parse dates from a string into a datetime object."""
     return dateutil.parser.parse(text)
 
 # -----------------------------------------------------------------------------
 
 def parse_float(text):
-    """Parse float numbers"""
+    """Parse float numbers."""
     return float(text.replace(',', '') if text else 0)
 
 # -----------------------------------------------------------------------------
 
 def parse_int(text):
-    """Parse int numbers"""
+    """Parse int numbers."""
     return int(text.replace(',', '') if text else 0)
 
 # -----------------------------------------------------------------------------
 
 def parse_bool(text):
-    """Parse booleans"""
+    """Parse booleans."""
     return text.lower() in ['true', 'yes']
 
 # Loaders =====================================================================
 
 class ProductItemLoader(ItemLoader):
-    """Product item loader"""
+    """Product item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
@@ -80,7 +81,8 @@ class ProductItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ReviewItemLoader(ItemLoader):
-    """Review item loader"""
+    """Review item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 
@@ -94,7 +96,8 @@ class ReviewItemLoader(ItemLoader):
 # -----------------------------------------------------------------------------
 
 class ReviewerItemLoader(ItemLoader):
-    """Reviewer item loader"""
+    """Reviewer item loader."""
+
     default_input_processor = MapCompose(clean_text)
     default_output_processor = TakeFirst()
 

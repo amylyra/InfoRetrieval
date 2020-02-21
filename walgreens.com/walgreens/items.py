@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Items"""
+"""Items."""
 
 # Imports =====================================================================
 
@@ -9,7 +9,8 @@ from scrapy import Item, Field
 # Items =======================================================================
 
 class ProductItem(Item):
-    """Product item"""
+    """Product item."""
+
     id = Field()
     name = Field()
     regular_price = Field()
@@ -30,7 +31,8 @@ class ProductItem(Item):
 # -----------------------------------------------------------------------------
 
 class ReviewItem(Item):
-    """Review item"""
+    """Review item."""
+
     id = Field()
     rating = Field()
     title = Field()
@@ -44,7 +46,8 @@ class ReviewItem(Item):
 # -----------------------------------------------------------------------------
 
 class ReviewerItem(Item):
-    """Reviewer item"""
+    """Reviewer item."""
+
     id = Field()
     username = Field()
     location = Field()

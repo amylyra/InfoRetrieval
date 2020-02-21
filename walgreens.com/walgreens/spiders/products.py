@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Walgreens Products Spider"""
+"""Walgreens products spider."""
 
 # Imports =====================================================================
 
@@ -21,7 +21,7 @@ from walgreens.loaders import (
 # Spider ======================================================================
 
 class WalgreensProductsSpider(CrawlSpider):
-    """Walgreens Products Spider"""
+    """Walgreens products spider."""
 
     name = 'products'
     allowed_domains = ['walgreens.com', 'bazaarvoice.com']
@@ -41,11 +41,16 @@ class WalgreensProductsSpider(CrawlSpider):
     # -------------------------------------------------------------------------
 
     def parse_listing(self, response):
-        """Extract product list"""
+        """
+        Extract product list.
+        
+        @url https://www.walgreens.com/store/c/eyes/ID=360457-tier3
+        @returns requests 1
+        """
         blob = response.css('script').re_first(r'__APP_INITIAL_STATE__ = (\{.+\});')
         if not blob:
             return
-            
+
         data = json.loads(blob)
 
         if not data['searchResult'].get('productList'):
@@ -60,16 +65,24 @@ class WalgreensProductsSpider(CrawlSpider):
         limit = response.meta.get('limit', 24)
         offset = int(url_query_parameter(response.url, 'No', 0)) + limit
 
-        yield response.follow(
+        return response.follow(
             add_or_replace_parameter(response.url, 'No', offset),
             callback=self.parse_listing,
-            meta={'offset': offset, 'limit': limit}
+            meta={
+                'offset': offset,
+                'limit': limit
+            }
         )
 
     # -------------------------------------------------------------------------
 
     def parse_product(self, response):
-        """Extract product details"""
+        """
+        Extract product details.
+        
+        @url https://www.walgreens.com/store/c/l.a.-colors-eyeliner-&-brow-pencil/ID=prod6248128-product
+        @returns requests 1
+        """
         loader = ProductItemLoader(ProductItem(), response)
         loader.add_value('id', response.url, re=r'/ID=([^-]+)')
         loader.add_css('name', '#productTitle')
@@ -94,7 +107,7 @@ class WalgreensProductsSpider(CrawlSpider):
     # -------------------------------------------------------------------------
 
     def parse_reviews(self, response):
-        """Extract product reviews"""
+        """Extract product reviews."""
         product = response.meta.get('product') or {}
         product['reviews'] = product.get('reviews') or []
         data = json.loads(response.body)
@@ -111,7 +124,7 @@ class WalgreensProductsSpider(CrawlSpider):
     # -------------------------------------------------------------------------
 
     def request_reviews(self, product, offset=0, limit=30):
-        """Request reviews"""
+        """Request reviews."""
         return scrapy.FormRequest(
             method='GET',
             url='https://api.bazaarvoice.com/data/reviews.json',
@@ -132,7 +145,7 @@ class WalgreensProductsSpider(CrawlSpider):
     # -------------------------------------------------------------------------
 
     def extract_review(self, data):
-        """Extract review details"""
+        """Extract review details."""
         loader = ReviewItemLoader(ReviewItem())
         loader.add_value('id', data.get('Id'))
         loader.add_value('rating', data.get('Rating'))
@@ -148,7 +161,7 @@ class WalgreensProductsSpider(CrawlSpider):
     # -------------------------------------------------------------------------
 
     def extract_reviewer(self, data):
-        """Extract reviewer details"""
+        """Extract reviewer details."""
         loader = ReviewerItemLoader(ReviewerItem())
         loader.add_value('id', data.get('AuthorId'))
         loader.add_value('username', data.get('UserNickname'))
